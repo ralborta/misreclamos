@@ -17,13 +17,13 @@ export async function GET(req: Request) {
     ...(q
       ? {
           OR: [
-            { code: { contains: q, mode: "insensitive" } },
-            { title: { contains: q, mode: "insensitive" } },
-            { customer: { phone: { contains: q, mode: "insensitive" } } },
+            { code: { contains: q, mode: "insensitive" as const } },
+            { title: { contains: q, mode: "insensitive" as const } },
+            { customer: { phone: { contains: q, mode: "insensitive" as const } } },
           ],
         }
       : {}),
-  } satisfies Parameters<typeof prisma.ticket.findMany>[0]["where"];
+  };
 
   const tickets = await prisma.ticket.findMany({
     where,

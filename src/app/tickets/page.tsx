@@ -53,13 +53,13 @@ export default async function TicketsPage({
     ...(query
       ? {
           OR: [
-            { code: { contains: query, mode: "insensitive" } },
-            { title: { contains: query, mode: "insensitive" } },
-            { customer: { phone: { contains: query, mode: "insensitive" } } },
+            { code: { contains: query, mode: "insensitive" as const } },
+            { title: { contains: query, mode: "insensitive" as const } },
+            { customer: { phone: { contains: query, mode: "insensitive" as const } } },
           ],
         }
       : {}),
-  } satisfies Parameters<typeof prisma.ticket.findMany>[0]["where"];
+  };
 
   const [tickets, statusCounts, priorityCounts] = await Promise.all([
     prisma.ticket.findMany({
@@ -143,7 +143,7 @@ export default async function TicketsPage({
               {tickets.length === 0 ? (
                 <div className="px-4 py-6 text-sm text-slate-500">No hay tickets con estos filtros.</div>
               ) : (
-                tickets.map((ticket: { id: string; code: string; title: string; status: string; priority: string; customer: { phone?: string; name?: string } | null; assignedTo: { name?: string } | null }) => (
+                tickets.map((ticket) => (
                   <div key={ticket.id} className="grid grid-cols-12 items-center px-4 py-3 hover:bg-slate-50">
                     <div className="col-span-2 text-sm font-semibold text-slate-800">{ticket.code}</div>
                     <div className="col-span-3">

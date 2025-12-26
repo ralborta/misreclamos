@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         title: data.text.split(" ").slice(0, 8).join(" ") || "Consulta",
         status: "OPEN",
         priority: "NORMAL",
-        category: inferCategory(data.text),
+        category: inferCategory(data.text) as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
         channel: "WHATSAPP",
       },
     });
@@ -102,9 +102,9 @@ export async function POST(req: Request) {
   await prisma.ticket.update({
     where: { id: ticket.id },
     data: {
-      priority: heuristics.priority,
-      category: heuristics.category,
-      status: actionPlan.setStatus || ticket.status,
+      priority: heuristics.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
+      category: heuristics.category as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
+      status: (actionPlan.setStatus || ticket.status) as "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED",
       lastMessageAt: new Date(),
     },
   });
