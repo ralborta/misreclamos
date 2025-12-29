@@ -82,7 +82,7 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                 {conversation.length === 0 ? (
                   <div className="text-sm text-slate-500">Sin mensajes aún.</div>
                 ) : (
-                  conversation.map((msg: { id: string; from: string; text: string; createdAt: Date }) => (
+                  conversation.map((msg: { id: string; from: string; text: string; attachments?: any; createdAt: Date }) => (
                     <div key={msg.id} className="flex flex-col gap-1">
                       <div className="text-xs text-slate-500">
                         {fromLabels[msg.from as "CUSTOMER" | "BOT" | "HUMAN"]} · {msg.createdAt.toLocaleString("es-AR")}
