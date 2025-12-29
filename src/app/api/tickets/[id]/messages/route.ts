@@ -4,6 +4,7 @@ import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
+import { sendWhatsAppMessage } from "@/lib/builderbot";
 
 const messageSchema = z.object({
   text: z.string().min(1),
@@ -25,6 +26,39 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { text, direction, from, rawPayload } = parsed.data;
 
+  // Si es un mensaje OUTBOUND, enviarlo a BuilderBot primero
+  if (direction === "OUTBOUND") {
+    // Obtener el teléfono del cliente del ticket
+    const ticket = await prisma.ticket.findUnique({
+      where: { id },
+      include: { customer: true },
+    });
+
+    if (!ticket) {
+      return NextResponse.json({ error: "Ticket no encontrado" }, { status: 404 });
+    }
+
+    if (!ticket.customer?.phone) {
+      return NextResponse.json({ error: "Cliente sin teléfono registrado" }, { status: 400 });
+    }
+
+    // Enviar mensaje a BuilderBot → WhatsApp
+    try {
+      await sendWhatsAppMessage({
+        number: ticket.customer.phone,
+        message: text,
+      });
+      console.log(`[Messages] ✅ Mensaje enviado a ${ticket.customer.phone}`);
+    } catch (error: any) {
+      console.error(`[Messages] ❌ Error al enviar mensaje:`, error);
+      return NextResponse.json({ 
+        error: "No se pudo enviar el mensaje al cliente", 
+        details: error.message 
+      }, { status: 500 });
+    }
+  }
+
+  // Guardar el mensaje en la base de datos
   const message = await prisma.ticketMessage.create({
     data: {
       ticketId: id,
@@ -43,5 +77,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     },
   });
 
-  return NextResponse.json({ message });
+  return NextResponse.json({ message, sent: direction === "OUTBOUND" });
 }
