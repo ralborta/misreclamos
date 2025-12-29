@@ -7,6 +7,7 @@ interface Agent {
   id: string;
   name: string;
   email: string;
+  phone: string;
   role: string;
   createdAt: Date;
   _count: {
@@ -69,6 +70,7 @@ export function AgentsList({ agentes }: { agentes: Agent[] }) {
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-slate-500">{agente.email}</div>
+                <div className="mt-1 text-xs text-slate-500">📱 {agente.phone}</div>
                 <div className="mt-1 text-xs text-slate-400">
                   {agente._count.tickets} {agente._count.tickets === 1 ? "ticket asignado" : "tickets asignados"}
                 </div>

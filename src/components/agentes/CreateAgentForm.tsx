@@ -10,12 +10,13 @@ export function CreateAgentForm() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     role: "SUPPORT" as "ADMIN" | "SUPPORT",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim()) return;
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim()) return;
 
     setLoading(true);
     setError(null);
@@ -35,7 +36,7 @@ export function CreateAgentForm() {
       }
 
       // Limpiar formulario
-      setFormData({ name: "", email: "", role: "SUPPORT" });
+      setFormData({ name: "", email: "", phone: "", role: "SUPPORT" });
       router.refresh();
     } catch {
       setError("Error de red");
@@ -74,6 +75,23 @@ export function CreateAgentForm() {
             placeholder="Ej: juan@example.com"
             required
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Teléfono (WhatsApp)
+          </label>
+          <input
+            type="tel"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none"
+            placeholder="Ej: 5491112345678"
+            required
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Formato: 549 + código de área + número (sin espacios)
+          </p>
         </div>
 
         <div>

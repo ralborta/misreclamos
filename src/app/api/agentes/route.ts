@@ -8,6 +8,7 @@ import { sessionOptions, type SessionData } from "@/lib/auth";
 const createAgentSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
+  phone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
   role: z.enum(["ADMIN", "SUPPORT"]).default("SUPPORT"),
 });
 
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     }, { status: 400 });
   }
 
-  const { name, email, role } = parsed.data;
+  const { name, email, phone, role } = parsed.data;
 
   // Verificar si ya existe
   const existing = await prisma.agentUser.findUnique({
@@ -61,10 +62,10 @@ export async function POST(req: Request) {
   }
 
   const agente = await prisma.agentUser.create({
-    data: { name, email, role },
+    data: { name, email, phone, role },
   });
 
-  console.log(`[Agentes] ✅ Agente creado: ${name} (${email})`);
+  console.log(`[Agentes] ✅ Agente creado: ${name} (${email}, ${phone})`);
 
   return NextResponse.json({ agente }, { status: 201 });
 }

@@ -74,6 +74,7 @@ model AgentUser {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String
+  phone     String    // Número de teléfono para notificaciones por WhatsApp
   role      AgentRole
   tickets   Ticket[]  @relation("AgentAssignments")
   createdAt DateTime  @default(now())
