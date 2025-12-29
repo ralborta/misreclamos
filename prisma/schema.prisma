@@ -85,6 +85,7 @@ model Ticket {
   code              String          @unique
   customerId        String
   customer          Customer        @relation(fields: [customerId], references: [id])
+  contactName       String          // Nombre de la persona que contacta (ej: "Juan Pérez")
   title             String
   status            TicketStatus
   priority          TicketPriority

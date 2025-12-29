@@ -50,7 +50,11 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
               ← Volver a tickets
             </Link>
             <h1 className="text-2xl font-semibold text-slate-900">Ticket {ticket.code}</h1>
-            <p className="text-sm text-slate-500">Cliente: {ticket.customer?.name || ticket.customer?.phone}</p>
+            <p className="text-sm text-slate-600">
+              <span className="font-medium">Empresa:</span> {ticket.customer?.name || "Desconocida"} • 
+              <span className="font-medium"> Contacto:</span> {ticket.contactName}
+            </p>
+            <p className="text-xs text-slate-500">📱 {ticket.customer?.phone}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="inline-flex items-center gap-2">

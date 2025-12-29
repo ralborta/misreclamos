@@ -8,6 +8,7 @@ interface Ticket {
   id: string;
   code: string;
   title: string;
+  contactName: string;
   status: string;
   priority: string;
   customer?: {
@@ -76,7 +77,10 @@ export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
                 </Link>
                 <div className="text-xs text-slate-500">{ticket.customer?.phone}</div>
               </div>
-              <div className="col-span-2 text-sm text-slate-700">{ticket.customer?.name || "Cliente"}</div>
+              <div className="col-span-2">
+                <div className="text-sm font-medium text-slate-700">{ticket.customer?.name || "Empresa"}</div>
+                <div className="text-xs text-slate-500">👤 {ticket.contactName}</div>
+              </div>
               <div className="col-span-2">
                 <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(ticket.status as TicketStatus)}`}>
                   {statusLabels[ticket.status as TicketStatus]}

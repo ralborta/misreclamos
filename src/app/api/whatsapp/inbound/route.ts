@@ -41,11 +41,33 @@ export async function POST(req: Request) {
 
   const messageText = data.body || "";
   const customerPhone = data.from;
-  const customerName = data.name;
+  const customerName = data.name; // Nombre de WhatsApp (la persona que escribe)
 
   if (!messageText) {
     console.warn("⚠️ Mensaje sin texto");
     return NextResponse.json({ ok: true, message: "Mensaje sin texto, ignorado" });
+  }
+
+  // Parsear el mensaje inicial de BuilderBot
+  // Formato esperado:
+  // Línea 1: Nombre de la empresa
+  // Línea 2: Nombre y rol del contacto
+  // Línea 3+: Problema/consulta
+  const lines = messageText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  let companyName = customerName || "Empresa desconocida";
+  let contactName = customerName || "Sin nombre";
+  let actualMessage = messageText;
+
+  // Si el mensaje tiene al menos 3 líneas, asumimos que es el formato inicial del bot
+  if (lines.length >= 3) {
+    companyName = lines[0]; // Línea 1 = Empresa
+    contactName = lines[1]; // Línea 2 = Contacto
+    actualMessage = lines.slice(2).join("\n"); // Línea 3+ = Problema
+    console.log(`📊 Parseado: Empresa="${companyName}", Contacto="${contactName}", Mensaje="${actualMessage}"`);
+  } else {
+    // Si no tiene el formato esperado, usar todo como mensaje
+    console.log(`ℹ️ Mensaje no sigue formato inicial, usando texto completo`);
+    contactName = customerName || "Sin nombre";
   }
 
   // Generar un messageId único basado en el contenido y timestamp
@@ -67,10 +89,11 @@ export async function POST(req: Request) {
     });
   }
 
+  // Upsert customer: el nombre es la EMPRESA
   const customer = await prisma.customer.upsert({
     where: { phone: customerPhone },
-    update: { name: customerName ?? undefined },
-    create: { phone: customerPhone, name: customerName },
+    update: { name: companyName },
+    create: { phone: customerPhone, name: companyName },
   });
 
   const cutoff = new Date(Date.now() - 1000 * 60 * 60 * 48);
@@ -90,24 +113,25 @@ export async function POST(req: Request) {
       data: {
         code: generateTicketCode(),
         customerId: customer.id,
-        title: messageText.split(" ").slice(0, 8).join(" ") || "Consulta",
+        contactName: contactName,
+        title: actualMessage.split(" ").slice(0, 8).join(" ") || "Consulta",
         status: "OPEN",
         priority: "NORMAL",
-        category: inferCategory(messageText) as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
+        category: inferCategory(actualMessage) as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
         channel: "WHATSAPP",
       },
     });
-    console.log(`🎫 Nuevo ticket creado: ${ticket.code}`);
+    console.log(`🎫 Nuevo ticket creado: ${ticket.code} - Empresa: ${companyName}, Contacto: ${contactName}`);
   } else {
     console.log(`🎫 Ticket existente: ${ticket.code}`);
   }
 
-  const heuristics = inferPriorityAndCategory(messageText, undefined, ticket.priority, ticket.category);
+  const heuristics = inferPriorityAndCategory(actualMessage, undefined, ticket.priority, ticket.category);
 
   const previousMessagesCount = await prisma.ticketMessage.count({ where: { ticketId: ticket.id } });
 
   const shouldEscalate = decideShouldEscalate({
-    text: messageText,
+    text: actualMessage,
     priority: heuristics.priority,
     previousMessages: previousMessagesCount,
   });
@@ -119,7 +143,7 @@ export async function POST(req: Request) {
       ticketId: ticket.id,
       direction: "INBOUND",
       from: "CUSTOMER",
-      text: messageText,
+      text: actualMessage,
       rawPayload,
       externalMessageId: messageId,
     },
@@ -140,7 +164,9 @@ export async function POST(req: Request) {
       ticketId: ticket.id,
       type: shouldEscalate ? "ESCALATED" : "AUTO_REPLY",
       payload: {
-        message: messageText,
+        message: actualMessage,
+        company: companyName,
+        contact: contactName,
         escalated: shouldEscalate,
       },
     },
