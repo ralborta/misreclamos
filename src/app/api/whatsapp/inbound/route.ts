@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { autoReplyActionPlan, escalationActionPlan, neutralActionPlan } from "@/lib/whatsapp/actionPlan";
+import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { generateTicketCode } from "@/lib/tickets";
 // Using string literals instead of Prisma enums for compatibility
 
-const inboundSchema = z.object({
-  phone: z.string().min(5),
-  name: z.string().optional(),
-  text: z.string().min(1),
-  messageId: z.string().optional(),
-  timestamp: z.union([z.string(), z.number()]).optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-  auth: z.string().optional(),
+// Schema para el formato de BuilderBot.cloud
+const builderbotWebhookSchema = z.object({
+  eventName: z.string(),
+  data: z.object({
+    body: z.string().optional(),
+    name: z.string().optional(),
+    from: z.string(),
+    attachment: z.array(z.any()).optional(),
+    projectId: z.string().optional(),
+  }),
 });
 
 export async function POST(req: Request) {
@@ -21,36 +23,54 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
   }
 
-  const parsed = inboundSchema.safeParse(payload);
+  console.log("📩 Webhook recibido de BuilderBot:", JSON.stringify(payload, null, 2));
+
+  const parsed = builderbotWebhookSchema.safeParse(payload);
   if (!parsed.success) {
+    console.error("❌ Formato inválido:", parsed.error.flatten());
     return NextResponse.json({ error: "Formato inválido", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const data = parsed.data;
-  const secret = req.headers.get("x-bb-secret") || data.auth;
-  if (!process.env.BUILDERBOT_WEBHOOK_SECRET || secret !== process.env.BUILDERBOT_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  const { eventName, data } = parsed.data;
+
+  // Solo procesar mensajes entrantes
+  if (eventName !== "message.incoming") {
+    console.log(`ℹ️ Evento ignorado: ${eventName}`);
+    return NextResponse.json({ ok: true, message: `Evento ${eventName} recibido pero no procesado` });
   }
 
+  const messageText = data.body || "";
+  const customerPhone = data.from;
+  const customerName = data.name;
+
+  if (!messageText) {
+    console.warn("⚠️ Mensaje sin texto");
+    return NextResponse.json({ ok: true, message: "Mensaje sin texto, ignorado" });
+  }
+
+  // Generar un messageId único basado en el contenido y timestamp
+  const messageId = `${customerPhone}-${Date.now()}`;
+
   // Idempotencia por external message id
-  if (data.messageId) {
-    const existing = await prisma.ticketMessage.findUnique({
-      where: { externalMessageId: data.messageId },
+  const existing = await prisma.ticketMessage.findFirst({
+    where: { 
+      externalMessageId: messageId,
+    },
+  });
+  
+  if (existing) {
+    console.log("ℹ️ Mensaje duplicado, ignorando");
+    return NextResponse.json({
+      ok: true,
+      ticketId: existing.ticketId,
+      idempotent: true,
     });
-    if (existing) {
-      return NextResponse.json({
-        ok: true,
-        ticketId: existing.ticketId,
-        idempotent: true,
-        actionPlan: neutralActionPlan(),
-      });
-    }
   }
 
   const customer = await prisma.customer.upsert({
-    where: { phone: data.phone },
-    update: { name: data.name ?? undefined },
-    create: { phone: data.phone, name: data.name },
+    where: { phone: customerPhone },
+    update: { name: customerName ?? undefined },
+    create: { phone: customerPhone, name: customerName },
   });
 
   const cutoff = new Date(Date.now() - 1000 * 60 * 60 * 48);
@@ -63,39 +83,45 @@ export async function POST(req: Request) {
     orderBy: { lastMessageAt: "desc" },
   });
 
+  const isNewTicket = !ticket;
+
   if (!ticket) {
     ticket = await prisma.ticket.create({
       data: {
         code: generateTicketCode(),
         customerId: customer.id,
-        title: data.text.split(" ").slice(0, 8).join(" ") || "Consulta",
+        title: messageText.split(" ").slice(0, 8).join(" ") || "Consulta",
         status: "OPEN",
         priority: "NORMAL",
-        category: inferCategory(data.text) as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
+        category: inferCategory(messageText) as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
         channel: "WHATSAPP",
       },
     });
+    console.log(`🎫 Nuevo ticket creado: ${ticket.code}`);
+  } else {
+    console.log(`🎫 Ticket existente: ${ticket.code}`);
   }
 
-  const heuristics = inferPriorityAndCategory(data.text, data.metadata, ticket.priority, ticket.category);
+  const heuristics = inferPriorityAndCategory(messageText, undefined, ticket.priority, ticket.category);
 
-  const actionPlan = decideNextAction({
-    text: data.text,
+  const previousMessagesCount = await prisma.ticketMessage.count({ where: { ticketId: ticket.id } });
+
+  const shouldEscalate = decideShouldEscalate({
+    text: messageText,
     priority: heuristics.priority,
-    metadata: data.metadata,
-    previousMessages: await prisma.ticketMessage.count({ where: { ticketId: ticket.id } }),
+    previousMessages: previousMessagesCount,
   });
 
-  const rawPayload = data as any;
+  const rawPayload = payload as any;
 
   await prisma.ticketMessage.create({
     data: {
       ticketId: ticket.id,
       direction: "INBOUND",
       from: "CUSTOMER",
-      text: data.text,
+      text: messageText,
       rawPayload,
-      externalMessageId: data.messageId,
+      externalMessageId: messageId,
     },
   });
 
@@ -104,7 +130,7 @@ export async function POST(req: Request) {
     data: {
       priority: heuristics.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
       category: heuristics.category as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
-      status: (actionPlan.setStatus || ticket.status) as "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED",
+      status: shouldEscalate ? "IN_PROGRESS" : ticket.status,
       lastMessageAt: new Date(),
     },
   });
@@ -112,15 +138,55 @@ export async function POST(req: Request) {
   await prisma.ticketEvent.create({
     data: {
       ticketId: ticket.id,
-      type: actionPlan.needsHuman ? "ESCALATED" : "AUTO_REPLY",
+      type: shouldEscalate ? "ESCALATED" : "AUTO_REPLY",
       payload: {
-        metadata: data.metadata || null,
-        actionPlan,
+        message: messageText,
+        escalated: shouldEscalate,
       },
     },
   });
 
-  return NextResponse.json({ ok: true, ticketId: ticket.id, actionPlan });
+  // Decidir si enviar respuesta automática
+  let autoReplyMessage: string | null = null;
+
+  if (shouldEscalate) {
+    autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Ticket: *${ticket.code}*. Te responderemos pronto.`;
+  } else if (isNewTicket) {
+    autoReplyMessage = `Hola! Hemos recibido tu mensaje. Ticket: *${ticket.code}*. Un agente lo revisará pronto.`;
+  }
+
+  // Enviar respuesta automática si corresponde
+  if (autoReplyMessage) {
+    try {
+      await sendWhatsAppMessage({
+        number: customerPhone,
+        message: autoReplyMessage,
+      });
+      console.log(`✅ Respuesta automática enviada a ${customerPhone}`);
+
+      // Registrar la respuesta automática en el ticket
+      await prisma.ticketMessage.create({
+        data: {
+          ticketId: ticket.id,
+          direction: "OUTBOUND",
+          from: "BOT",
+          text: autoReplyMessage,
+          rawPayload: { autoReply: true, timestamp: new Date().toISOString() },
+        },
+      });
+    } catch (error) {
+      console.error("❌ Error al enviar respuesta automática:", error);
+      // No fallar el webhook si falla el envío
+    }
+  }
+
+  return NextResponse.json({ 
+    ok: true, 
+    ticketId: ticket.id, 
+    ticketCode: ticket.code,
+    escalated: shouldEscalate,
+    autoReplySent: !!autoReplyMessage,
+  });
 }
 
 function inferPriorityAndCategory(
@@ -161,37 +227,31 @@ function inferCategory(text: string): string {
   return "TECH_SUPPORT";
 }
 
-function decideNextAction({
+function decideShouldEscalate({
   text,
   priority,
-  metadata,
   previousMessages,
 }: {
   text: string;
   priority: string;
-  metadata?: Record<string, unknown>;
   previousMessages: number;
-}) {
+}): boolean {
   const lower = text.toLowerCase();
-  const confidence = typeof metadata?.confidence === "number" ? metadata.confidence : 0;
 
-  const shouldEscalate =
-    priority === "URGENT" ||
-    /(amenaza|legal|fraude|cliente enojado|escala|denuncia)/.test(lower) ||
-    previousMessages >= 3;
-
-  if (shouldEscalate) {
-    return escalationActionPlan();
+  // Escalate if priority is URGENT
+  if (priority === "URGENT") {
+    return true;
   }
 
-  const typicalRequest = /(como|por que|error|no responde|webhook|env)/.test(lower);
-  if (typicalRequest || confidence >= 0.7) {
-    return autoReplyActionPlan([
-      "Nombre del agente",
-      "Canal y cliente impactado",
-      "Error exacto o pantallazo",
-    ]);
+  // Escalate if contains critical keywords
+  if (/(amenaza|legal|fraude|cliente enojado|escala|denuncia)/.test(lower)) {
+    return true;
   }
 
-  return neutralActionPlan();
+  // Escalate if there are already 3+ messages in the ticket
+  if (previousMessages >= 3) {
+    return true;
+  }
+
+  return false;
 }

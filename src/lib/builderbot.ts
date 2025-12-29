@@ -1,0 +1,68 @@
+import axios from 'axios';
+
+const BUILDERBOT_BASE_URL =
+  process.env.BUILDERBOT_BASE_URL || 'https://app.builderbot.cloud';
+
+export interface SendWhatsAppOptions {
+  number: string; // número en formato internacional (ej: 5491112345678)
+  message: string; // contenido del mensaje
+  mediaUrl?: string; // opcional
+  checkIfExists?: boolean; // default false
+}
+
+/**
+ * Envía un mensaje de WhatsApp vía BuilderBot Cloud (API v2).
+ */
+export async function sendWhatsAppMessage(options: SendWhatsAppOptions) {
+  const { number, message, mediaUrl, checkIfExists = false } = options;
+
+  const BOT_ID = process.env.BUILDERBOT_BOT_ID || '';
+  const API_KEY = process.env.BUILDERBOT_API_KEY || '';
+
+  if (!BOT_ID || !API_KEY) {
+    throw new Error(
+      'BuilderBot no configurado: define BUILDERBOT_BOT_ID y BUILDERBOT_API_KEY'
+    );
+  }
+
+  const url = `${BUILDERBOT_BASE_URL}/api/v2/${BOT_ID}/messages`;
+
+  const body: Record<string, any> = {
+    messages: {
+      content: message,
+    },
+    number,
+    checkIfExists,
+  };
+
+  if (mediaUrl) {
+    body.messages.mediaUrl = mediaUrl;
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-builderbot': API_KEY,
+  };
+
+  console.log('[BuilderBot] Enviando mensaje:', {
+    url,
+    number,
+    messageLength: message.length,
+    hasMediaUrl: !!mediaUrl,
+  });
+
+  try {
+    const response = await axios.post(url, body, { headers, timeout: 30000 });
+    console.log('[BuilderBot] ✅ Mensaje enviado exitosamente');
+    return response.data;
+  } catch (error: any) {
+    console.error('[BuilderBot] ❌ Error al enviar mensaje:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    throw new Error(
+      `Error al enviar mensaje a BuilderBot: ${error.message}`
+    );
+  }
+}

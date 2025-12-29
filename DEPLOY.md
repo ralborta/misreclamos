@@ -21,13 +21,14 @@ Configura estas variables en **Vercel → Project Settings → Environment Varia
 DATABASE_URL=postgresql://postgres:QaVYMOysPnKLDIthwOrsAcPISAVnRCzj@gondola.proxy.rlwy.net:12745/railway?sslmode=require
 APP_PASSWORD=empliados-support-2025-secure
 SESSION_PASSWORD=empliados-session-secret-key-32-chars-minimum-required-for-security
-BUILDERBOT_WEBHOOK_SECRET=builderbot-webhook-secret-key-2025
-APP_BASE_URL=https://TU-APP.vercel.app
+BUILDERBOT_BOT_ID=7d4339ee-2a9b-424e-92f6-ad7790c1662f
+BUILDERBOT_API_KEY=bb-04c2baf7-5db2-4c43-9cfc-35bbbb660812
+BUILDERBOT_BASE_URL=https://app.builderbot.cloud
 ```
 
 **IMPORTANTE:** 
-- Reemplaza `APP_BASE_URL` con la URL real que te dé Vercel después del primer deploy
 - Las contraseñas pueden cambiarse por otras más seguras si lo deseas
+- El `BUILDERBOT_BOT_ID` y `BUILDERBOT_API_KEY` son los que te proporciona BuilderBot.cloud
 
 ## Pasos para Deploy en Vercel
 
@@ -40,23 +41,49 @@ APP_BASE_URL=https://TU-APP.vercel.app
 7. En "Environment Variables", pega las 5 variables de arriba
 8. Click "Deploy"
 
-## Configurar Builderbot
+## Configurar BuilderBot.cloud
 
 Una vez que tengas la URL de Vercel (ej: `https://empliados-support-desk.vercel.app`):
 
-1. Configura el webhook de Builderbot a: `https://TU-APP.vercel.app/api/whatsapp/inbound`
-2. Header requerido: `x-bb-secret: builderbot-webhook-secret-key-2025`
-3. Payload esperado:
+### 1. Configurar Webhook en BuilderBot
+
+Ve a tu proyecto en BuilderBot.cloud → **Desarrollador** → **Webhooks** → **message.incoming**
+
+**URL del Webhook:**
+```
+https://TU-APP.vercel.app/api/whatsapp/inbound
+```
+
+**Método:** POST  
+**Content-Type:** application/json
+
+BuilderBot enviará automáticamente este formato:
 ```json
 {
-  "phone": "54911...",
-  "text": "mensaje del cliente",
-  "messageId": "id-unico-opcional",
-  "name": "nombre-opcional",
-  "timestamp": 1234567890,
-  "metadata": {}
+  "eventName": "message.incoming",
+  "data": {
+    "body": "texto del mensaje",
+    "name": "Nombre del Cliente",
+    "from": "5491112345678",
+    "attachment": [],
+    "projectId": "7d4339ee-2a9b-424e-92f6-ad7790c1662f"
+  }
 }
 ```
+
+### 2. ¿Cómo funciona?
+
+1. **Cliente envía WhatsApp** → BuilderBot recibe el mensaje
+2. **BuilderBot hace POST** → Tu webhook en Vercel
+3. **Tu backend crea ticket** → Guarda en base de datos
+4. **Tu backend envía respuesta** → Vía API de BuilderBot → Cliente recibe respuesta automática
+
+### 3. Mensajes Automáticos
+
+El sistema enviará automáticamente:
+- ✅ Confirmación cuando se crea un ticket nuevo
+- ✅ Notificación cuando se escala a un agente humano
+- ✅ Incluye el código del ticket (ej: `TKT-20250129-ABC123`)
 
 ## Pruebas Locales
 
@@ -74,12 +101,20 @@ Luego:
 ```bash
 curl -X POST http://localhost:3000/api/whatsapp/inbound \
   -H "Content-Type: application/json" \
-  -H "x-bb-secret: builderbot-webhook-secret-key-2025" \
   -d '{
-    "phone": "5491112345678",
-    "text": "No responde Walter",
-    "messageId": "test-123"
+    "eventName": "message.incoming",
+    "data": {
+      "body": "Hola, no responde Walter",
+      "name": "Cliente Test",
+      "from": "5491112345678",
+      "attachment": [],
+      "projectId": "7d4339ee-2a9b-424e-92f6-ad7790c1662f"
+    }
   }'
 ```
 
-Debería crear un ticket y devolver un Action Plan.
+Debería:
+1. Crear un ticket nuevo
+2. Guardar el mensaje en la base de datos
+3. Responder con un JSON indicando éxito
+4. (Si está bien configurado) Enviar mensaje automático al cliente por WhatsApp
