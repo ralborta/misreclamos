@@ -35,7 +35,6 @@ export default async function DashboardPage() {
 
   return (
     <TicketsLayout>
-      <div className="mx-auto max-w-7xl bg-slate-50">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
