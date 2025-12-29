@@ -42,10 +42,18 @@ export async function POST(req: Request) {
   const messageText = data.body || "";
   const customerPhone = data.from;
   const customerName = data.name; // Nombre de WhatsApp (la persona que escribe)
+  const attachments = data.attachment || [];
 
-  if (!messageText) {
-    console.warn("⚠️ Mensaje sin texto");
-    return NextResponse.json({ ok: true, message: "Mensaje sin texto, ignorado" });
+  // Procesar attachments (imágenes, videos, documentos)
+  const processedAttachments = attachments.map((att: any) => ({
+    url: att.url || att,
+    type: att.mimetype || getFileTypeFromUrl(att.url || att),
+    name: att.filename || "archivo",
+  }));
+
+  if (!messageText && processedAttachments.length === 0) {
+    console.warn("⚠️ Mensaje sin texto ni attachments");
+    return NextResponse.json({ ok: true, message: "Mensaje vacío, ignorado" });
   }
 
   // Parsear el mensaje inicial de BuilderBot
@@ -143,11 +151,16 @@ export async function POST(req: Request) {
       ticketId: ticket.id,
       direction: "INBOUND",
       from: "CUSTOMER",
-      text: actualMessage,
+      text: actualMessage || "[Archivo adjunto]",
+      attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
       rawPayload,
       externalMessageId: messageId,
     },
   });
+
+  if (processedAttachments.length > 0) {
+    console.log(`📎 ${processedAttachments.length} archivo(s) adjunto(s) guardado(s)`);
+  }
 
   await prisma.ticket.update({
     where: { id: ticket.id },
@@ -280,4 +293,15 @@ function decideShouldEscalate({
   }
 
   return false;
+}
+
+function getFileTypeFromUrl(url: string): string {
+  if (!url) return "unknown";
+  const lowerUrl = url.toLowerCase();
+  if (/(jpg|jpeg|png|gif|webp)/.test(lowerUrl)) return "image";
+  if (/(mp4|mov|avi|webm)/.test(lowerUrl)) return "video";
+  if (/(pdf)/.test(lowerUrl)) return "pdf";
+  if (/(mp3|wav|ogg|m4a)/.test(lowerUrl)) return "audio";
+  if (/(doc|docx|xls|xlsx|ppt|pptx)/.test(lowerUrl)) return "document";
+  return "file";
 }

@@ -12,6 +12,7 @@ import { MessageComposer } from "@/components/tickets/MessageComposer";
 import { StatusActions } from "@/components/tickets/StatusActions";
 import { ConversationSummary } from "@/components/tickets/ConversationSummary";
 import { AssignAgentDropdown } from "@/components/tickets/AssignAgentDropdown";
+import { MessageAttachments } from "@/components/tickets/MessageAttachments";
 
 export default async function TicketDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireSession();
@@ -84,16 +85,21 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                       <div className="text-xs text-slate-500">
                         {fromLabels[msg.from as "CUSTOMER" | "BOT" | "HUMAN"]} · {msg.createdAt.toLocaleString("es-AR")}
                       </div>
-                      <div
-                        className={`max-w-2xl rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                          msg.from === "CUSTOMER"
-                            ? "bg-slate-100 text-slate-800"
-                            : msg.from === "BOT"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-blue-100 text-blue-900"
-                        }`}
-                      >
-                        {msg.text}
+                      <div>
+                        <div
+                          className={`max-w-2xl rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                            msg.from === "CUSTOMER"
+                              ? "bg-slate-100 text-slate-800"
+                              : msg.from === "BOT"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-blue-100 text-blue-900"
+                          }`}
+                        >
+                          {msg.text}
+                        </div>
+                        {msg.attachments && (
+                          <MessageAttachments attachments={msg.attachments as any} />
+                        )}
                       </div>
                     </div>
                   ))

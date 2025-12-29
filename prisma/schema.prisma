@@ -118,6 +118,7 @@ model TicketMessage {
   direction         MessageDirection
   from              MessageFrom
   text              String
+  attachments       Json?            // Array de { url, type, name } para imágenes y archivos
   rawPayload        Json
   externalMessageId String?          @unique
   createdAt         DateTime         @default(now())
