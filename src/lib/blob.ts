@@ -10,6 +10,13 @@ export async function uploadToBlob(tempUrl: string, filename?: string): Promise<
   try {
     console.log(`📥 Descargando imagen temporal: ${tempUrl}`);
 
+    // Verificar que el token esté disponible
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      console.warn(`⚠️ BLOB_READ_WRITE_TOKEN no está configurado. Usando URL temporal.`);
+      return tempUrl;
+    }
+
     // Descargar la imagen de BuilderBot
     const response = await fetch(tempUrl);
     if (!response.ok) {
@@ -22,6 +29,8 @@ export async function uploadToBlob(tempUrl: string, filename?: string): Promise<
     // Generar nombre único si no se proporciona
     const finalFilename = filename || `attachment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
+    console.log(`📤 Subiendo a Vercel Blob: ${finalFilename} (${contentType})`);
+
     // Subir a Vercel Blob
     const { url } = await put(finalFilename, blob, {
       access: "public",
@@ -32,6 +41,7 @@ export async function uploadToBlob(tempUrl: string, filename?: string): Promise<
     return url;
   } catch (error: any) {
     console.error(`❌ Error al subir a Blob:`, error.message);
+    console.error(`❌ Stack:`, error.stack);
     // Si falla, devolver la URL original como fallback
     return tempUrl;
   }
