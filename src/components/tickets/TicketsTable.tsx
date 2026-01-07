@@ -11,6 +11,8 @@ interface Ticket {
   contactName: string;
   status: string;
   priority: string;
+  lastMessageAt: Date | string;
+  createdAt: Date | string;
   customer?: {
     name: string | null;
     phone: string;
@@ -49,54 +51,111 @@ function priorityBadgeClass(priority: TicketPriority) {
 }
 
 export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
+  const formatDateTime = (date: Date | string) => {
+    const d = typeof date === "string" ? new Date(date) : date;
+    return {
+      date: d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+      time: d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+    };
+  };
+
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-      <div className="grid grid-cols-12 border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-        <div className="col-span-2">ID</div>
-        <div className="col-span-3">Asunto</div>
-        <div className="col-span-2">Cliente</div>
-        <div className="col-span-2">Estado</div>
-        <div className="col-span-2">Prioridad</div>
-        <div className="col-span-1">Asignado</div>
-      </div>
-      <div className="divide-y divide-slate-100">
-        {tickets.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-slate-500">
-            No hay tickets en esta sección.
-          </div>
-        ) : (
-          tickets.map((ticket) => (
-            <div key={ticket.id} className="grid grid-cols-12 items-center px-4 py-3 hover:bg-slate-50">
-              <div className="col-span-2 text-sm font-semibold text-slate-800">{ticket.code}</div>
-              <div className="col-span-3">
-                <Link
-                  href={`/tickets/${ticket.id}`}
-                  className="text-sm font-semibold text-indigo-600 hover:underline"
-                >
-                  {ticket.title}
-                </Link>
-                <div className="text-xs text-slate-500">{ticket.customer?.phone}</div>
-              </div>
-              <div className="col-span-2">
-                <div className="text-sm font-medium text-slate-700">{ticket.customer?.name || "Empresa"}</div>
-                <div className="text-xs text-slate-500">👤 {ticket.contactName}</div>
-              </div>
-              <div className="col-span-2">
-                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(ticket.status as TicketStatus)}`}>
-                  {statusLabels[ticket.status as TicketStatus]}
-                </span>
-              </div>
-              <div className="col-span-2">
-                <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${priorityBadgeClass(ticket.priority as TicketPriority)}`}>
-                  {priorityLabels[ticket.priority as TicketPriority]}
-                </span>
-              </div>
-              <div className="col-span-1 text-sm text-slate-700">
-                {ticket.assignedTo?.name || "–"}
-              </div>
-            </div>
-          ))
-        )}
+    <div className="overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-200">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">ID</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Asunto</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Cliente</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Estado</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Prioridad</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Asignado</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Última Actividad</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Creado</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-slate-100">
+            {tickets.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-4xl">📭</span>
+                    <span>No hay tickets en esta sección.</span>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              tickets.map((ticket) => {
+                const lastActivity = formatDateTime(ticket.lastMessageAt);
+                const created = formatDateTime(ticket.createdAt);
+                return (
+                  <tr
+                    key={ticket.id}
+                    className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
+                    onClick={() => (window.location.href = `/tickets/${ticket.id}`)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-slate-900">{ticket.code}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Link
+                        href={`/tickets/${ticket.id}`}
+                        className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 hover:underline block"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {ticket.title.length > 60 ? `${ticket.title.substring(0, 60)}...` : ticket.title}
+                      </Link>
+                      <div className="text-xs text-slate-500 mt-1">📱 {ticket.customer?.phone}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-slate-900">
+                        {ticket.customer?.name || "Empresa desconocida"}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">👤 {ticket.contactName}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold shadow-sm ${statusBadgeClass(ticket.status as TicketStatus)}`}
+                      >
+                        {statusLabels[ticket.status as TicketStatus]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold shadow-sm ${priorityBadgeClass(ticket.priority as TicketPriority)}`}
+                      >
+                        {priorityLabels[ticket.priority as TicketPriority]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {ticket.assignedTo ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <span className="text-xs font-bold text-indigo-700">
+                              {ticket.assignedTo.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium text-slate-700">{ticket.assignedTo.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-400 italic">Sin asignar</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-900">{lastActivity.date}</div>
+                      <div className="text-xs text-slate-500">{lastActivity.time}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-slate-700">{created.date}</div>
+                      <div className="text-xs text-slate-500">{created.time}</div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -13,6 +13,27 @@ export default async function TicketsPage() {
     include: { customer: true, assignedTo: true },
     orderBy: { lastMessageAt: "desc" },
     take: 100,
+    select: {
+      id: true,
+      code: true,
+      title: true,
+      contactName: true,
+      status: true,
+      priority: true,
+      lastMessageAt: true,
+      createdAt: true,
+      customer: {
+        select: {
+          name: true,
+          phone: true,
+        },
+      },
+      assignedTo: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
 
   const [statusCounts, priorityCounts, totalCount] = await Promise.all([
@@ -30,19 +51,51 @@ export default async function TicketsPage() {
 
   return (
     <TicketsLayout>
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Todos los Tickets</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Vista general de {totalCount} {totalCount === 1 ? "ticket" : "tickets"} en el sistema
-          </p>
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg">
+                🎫
+              </span>
+              Todos los Tickets
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Vista general de <span className="font-semibold text-indigo-600">{totalCount}</span>{" "}
+              {totalCount === 1 ? "ticket" : "tickets"} en el sistema
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard label="Abiertos" value={statusCountMap.OPEN || 0} color="blue" />
-          <SummaryCard label="En Progreso" value={statusCountMap.IN_PROGRESS || 0} color="amber" />
-          <SummaryCard label="Esperando Cliente" value={statusCountMap.WAITING_CUSTOMER || 0} color="lime" />
-          <SummaryCard label="Urgentes" value={priorityCountMap.URGENT || 0} color="rose" />
+          <SummaryCard
+            label="Abiertos"
+            value={statusCountMap.OPEN || 0}
+            color="blue"
+            icon="📋"
+            description="Tickets pendientes de atención"
+          />
+          <SummaryCard
+            label="En Progreso"
+            value={statusCountMap.IN_PROGRESS || 0}
+            color="amber"
+            icon="⚙️"
+            description="Siendo atendidos actualmente"
+          />
+          <SummaryCard
+            label="Esperando Cliente"
+            value={statusCountMap.WAITING_CUSTOMER || 0}
+            color="lime"
+            icon="⏳"
+            description="Aguardando respuesta"
+          />
+          <SummaryCard
+            label="Urgentes"
+            value={priorityCountMap.URGENT || 0}
+            color="rose"
+            icon="🚨"
+            description="Requieren atención inmediata"
+          />
         </div>
 
         <TicketsTable tickets={tickets} />
@@ -51,18 +104,60 @@ export default async function TicketsPage() {
   );
 }
 
-function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600 ring-blue-100",
-    amber: "bg-amber-50 text-amber-600 ring-amber-100",
-    lime: "bg-lime-50 text-lime-600 ring-lime-100",
-    rose: "bg-rose-50 text-rose-600 ring-rose-100",
+function SummaryCard({
+  label,
+  value,
+  color,
+  icon,
+  description,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  icon?: string;
+  description?: string;
+}) {
+  const colorClasses: Record<string, { bg: string; text: string; ring: string; iconBg: string }> = {
+    blue: {
+      bg: "bg-gradient-to-br from-blue-50 to-blue-100",
+      text: "text-blue-700",
+      ring: "ring-blue-200",
+      iconBg: "bg-blue-500",
+    },
+    amber: {
+      bg: "bg-gradient-to-br from-amber-50 to-amber-100",
+      text: "text-amber-700",
+      ring: "ring-amber-200",
+      iconBg: "bg-amber-500",
+    },
+    lime: {
+      bg: "bg-gradient-to-br from-lime-50 to-lime-100",
+      text: "text-lime-700",
+      ring: "ring-lime-200",
+      iconBg: "bg-lime-500",
+    },
+    rose: {
+      bg: "bg-gradient-to-br from-rose-50 to-rose-100",
+      text: "text-rose-700",
+      ring: "ring-rose-200",
+      iconBg: "bg-rose-500",
+    },
   };
 
+  const colors = colorClasses[color] || colorClasses.blue;
+
   return (
-    <div className={`rounded-xl p-6 ring-1 ${colorClasses[color] || colorClasses.blue}`}>
-      <div className="text-sm font-medium">{label}</div>
-      <div className="mt-2 text-3xl font-bold text-slate-900">{value}</div>
+    <div className={`rounded-2xl p-6 ring-2 ${colors.bg} ${colors.ring} shadow-md hover:shadow-lg transition-all`}>
+      <div className="flex items-start justify-between mb-4">
+        <div className={`w-12 h-12 rounded-xl ${colors.iconBg} flex items-center justify-center text-2xl shadow-lg`}>
+          {icon || "📊"}
+        </div>
+      </div>
+      <div className="space-y-1">
+        <div className={`text-sm font-semibold ${colors.text} uppercase tracking-wide`}>{label}</div>
+        <div className="text-4xl font-bold text-slate-900">{value}</div>
+        {description && <div className="text-xs text-slate-600 mt-2">{description}</div>}
+      </div>
     </div>
   );
 }
