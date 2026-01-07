@@ -110,7 +110,7 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   // Línea 1: Nombre de la empresa
   // Línea 2: Nombre y rol del contacto
   // Línea 3+: Problema/consulta
-  const lines = messageText.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  const lines = messageText.split("\n").map((l: string) => l.trim()).filter((l: string) => l.length > 0);
   let companyName = customerName || "Empresa desconocida";
   let contactName = customerName || "Sin nombre";
   let actualMessage = messageText;
