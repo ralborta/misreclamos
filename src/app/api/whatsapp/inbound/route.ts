@@ -358,21 +358,47 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
     return NextResponse.json({ ok: true, message: "No hay ticket activo" });
   }
 
+  // Verificar si ya existe un mensaje similar reciente (para evitar duplicados cuando se envía desde la plataforma)
+  // Buscar mensajes OUTBOUND del mismo ticket con el mismo texto en los últimos 2 minutos
+  const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+  const existingMessage = await prisma.ticketMessage.findFirst({
+    where: {
+      ticketId: ticket.id,
+      direction: "OUTBOUND",
+      text: messageText || "[Archivo adjunto]",
+      createdAt: {
+        gte: twoMinutesAgo,
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existingMessage) {
+    console.log(`ℹ️ Mensaje saliente ya existe (probablemente enviado desde la plataforma), ignorando duplicado`);
+    return NextResponse.json({
+      ok: true,
+      ticketId: ticket.id,
+      ticketCode: ticket.code,
+      duplicate: true,
+      existingMessageId: existingMessage.id,
+    });
+  }
+
   // Generar messageId único
   const messageId = `outgoing-${customerPhone}-${Date.now()}`;
 
-  // Verificar idempotencia
-  const existing = await prisma.ticketMessage.findFirst({
+  // Verificar idempotencia por externalMessageId
+  const existingById = await prisma.ticketMessage.findFirst({
     where: { 
       externalMessageId: messageId,
     },
   });
   
-  if (existing) {
-    console.log("ℹ️ Mensaje saliente duplicado, ignorando");
+  if (existingById) {
+    console.log("ℹ️ Mensaje saliente duplicado por ID, ignorando");
     return NextResponse.json({
       ok: true,
-      ticketId: existing.ticketId,
+      ticketId: existingById.ticketId,
       idempotent: true,
     });
   }
