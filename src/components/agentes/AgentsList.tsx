@@ -77,11 +77,11 @@ export function AgentsList({ agentes }: { agentes: Agent[] }) {
               </div>
               <button
                 onClick={() => handleDelete(agente.id, agente.name)}
-                disabled={deleting === agente.id || agente._count.tickets > 0}
+                disabled={deleting === agente.id}
                 className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={agente._count.tickets > 0 ? "No se puede eliminar (tiene tickets asignados)" : "Eliminar agente"}
+                title={agente._count.tickets > 0 ? `Eliminar agente (se desasignarán ${agente._count.tickets} tickets)` : "Eliminar agente"}
               >
-                {deleting === agente.id ? "..." : "Eliminar"}
+                {deleting === agente.id ? "Eliminando..." : "Eliminar"}
               </button>
             </div>
           ))

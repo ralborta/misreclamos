@@ -37,11 +37,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Agente no encontrado" }, { status: 404 });
   }
 
+  // Si tiene tickets asignados, desasignarlos primero
   if (agente._count.tickets > 0) {
-    return NextResponse.json({ 
-      error: `No se puede eliminar. Tiene ${agente._count.tickets} tickets asignados.`,
-      ticketsCount: agente._count.tickets,
-    }, { status: 400 });
+    await prisma.ticket.updateMany({
+      where: { assignedToUserId: id },
+      data: { assignedToUserId: null },
+    });
+    console.log(`[Agentes] Desasignados ${agente._count.tickets} tickets del agente ${agente.name}`);
   }
 
   await prisma.agentUser.delete({

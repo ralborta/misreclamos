@@ -78,34 +78,36 @@ export function CustomersList({ initialCustomers, initialTotal }: CustomersListP
             {initialTotal} {initialTotal === 1 ? "cliente" : "clientes"} en total
           </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Buscar por teléfono o nombre..."
-              className="pl-10 pr-4 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="Buscar por teléfono o nombre..."
+                className="w-full sm:w-auto pl-10 pr-4 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+            <select
+              value={hasTicketsFilter}
+              onChange={(e) => handleFilterChange(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white min-w-[160px]"
+            >
+              <option value="all">Todos los clientes</option>
+              <option value="true">Con tickets</option>
+              <option value="false">Sin tickets</option>
+            </select>
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 whitespace-nowrap"
+            >
+              {loading ? "Buscando..." : "Buscar"}
+            </button>
           </div>
-          <select
-            value={hasTicketsFilter}
-            onChange={(e) => handleFilterChange(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
-          >
-            <option value="all">Todos los clientes</option>
-            <option value="true">Con tickets</option>
-            <option value="false">Sin tickets</option>
-          </select>
-          <button
-            onClick={handleSearch}
-            disabled={loading}
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
-          >
-            {loading ? "Buscando..." : "Buscar"}
-          </button>
         </div>
       </div>
 
