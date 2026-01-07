@@ -41,6 +41,7 @@ function TicketsSidebar() {
         <SectionTitle>Gestión</SectionTitle>
         <NavLink label="👥 Agentes" href="/agentes" />
         <NavLink label="⚙️ Configuración" href="/configuracion" />
+        <NavLink label="👤 Clientes" href="/clientes" />
       </nav>
     </aside>
   );
