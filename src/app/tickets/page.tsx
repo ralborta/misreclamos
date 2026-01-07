@@ -50,7 +50,7 @@ export default async function TicketsPage() {
 
   return (
     <TicketsLayout>
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-3">

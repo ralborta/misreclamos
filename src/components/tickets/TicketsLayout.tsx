@@ -14,16 +14,19 @@ export function TicketsLayout({ children }: { children: React.ReactNode }) {
 
 function TicketsSidebar() {
   return (
-    <aside className="w-64 bg-slate-800 text-white shadow-lg">
-      <div className="flex items-center gap-3 px-6 py-5 text-lg font-semibold">
-        <Link href="/tickets" className="flex items-center gap-3 hover:opacity-80 transition">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+    <aside className="w-72 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-r border-slate-700/50">
+      <div className="flex items-center gap-3 px-6 py-6 border-b border-slate-700/50">
+        <Link href="/tickets" className="flex items-center gap-3 hover:opacity-90 transition">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg text-xl">
             🎧
           </span>
-          <span>Soporte</span>
+          <div>
+            <span className="text-lg font-bold block">Soporte</span>
+            <span className="text-xs text-slate-400">Empliados</span>
+          </div>
         </Link>
       </div>
-      <nav className="space-y-1 px-2 pb-6 text-sm">
+      <nav className="space-y-1 px-3 py-4 text-sm overflow-y-auto h-[calc(100vh-100px)]">
         <SectionTitle>Inicio</SectionTitle>
         <NavLink label="📊 Dashboard" href="/dashboard" />
         <NavLink label="🎫 Todos los Tickets" href="/tickets" />
@@ -48,7 +51,11 @@ function TicketsSidebar() {
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <div className="px-4 pb-2 pt-4 text-xs uppercase text-slate-400">{children}</div>;
+  return (
+    <div className="px-4 pb-2 pt-5 text-xs font-bold uppercase tracking-wider text-slate-400 border-t border-slate-700/50 mt-2">
+      {children}
+    </div>
+  );
 }
 
 function NavLink({
@@ -66,12 +73,21 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`group flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition hover:bg-white/10 ${
-        active ? "bg-white/10 text-white" : "text-slate-200"
+      className={`group flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
+        active
+          ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+          : "text-slate-300 hover:bg-white/5 hover:text-white"
       }`}
     >
-      {indicator ? <span className={`h-2 w-2 rounded-full ${indicator}`}></span> : null}
+      {indicator ? (
+        <span className={`h-2.5 w-2.5 rounded-full ${indicator} shadow-sm`}></span>
+      ) : (
+        <span className="w-2.5"></span>
+      )}
       <span>{label}</span>
+      {active && (
+        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+      )}
     </Link>
   );
 }
