@@ -379,12 +379,12 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
 
   const rawPayload = { eventName, data };
 
-  // Guardar el mensaje saliente del agente
+  // Guardar el mensaje saliente del agente desde BuilderBot
   await prisma.ticketMessage.create({
     data: {
       ticketId: ticket.id,
       direction: "OUTBOUND",
-      from: "HUMAN", // Mensaje enviado por agente desde BuilderBot
+      from: "BOT", // Mensaje enviado por agente desde BuilderBot, se muestra como bot (verde)
       text: messageText || "[Archivo adjunto]",
       attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
       rawPayload,
