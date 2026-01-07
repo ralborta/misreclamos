@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { statusLabels, priorityLabels } from "@/lib/tickets";
 
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
@@ -51,12 +54,21 @@ function priorityBadgeClass(priority: TicketPriority) {
 }
 
 export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
+  const router = useRouter();
+
   const formatDateTime = (date: Date | string) => {
-    const d = typeof date === "string" ? new Date(date) : date;
-    return {
-      date: d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
-      time: d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-    };
+    try {
+      const d = typeof date === "string" ? new Date(date) : date;
+      if (isNaN(d.getTime())) {
+        return { date: "N/A", time: "N/A" };
+      }
+      return {
+        date: d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+        time: d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+      };
+    } catch {
+      return { date: "N/A", time: "N/A" };
+    }
   };
 
   return (
@@ -93,7 +105,7 @@ export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
                   <tr
                     key={ticket.id}
                     className="hover:bg-indigo-50/30 transition-colors cursor-pointer"
-                    onClick={() => (window.location.href = `/tickets/${ticket.id}`)}
+                    onClick={() => router.push(`/tickets/${ticket.id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-slate-900">{ticket.code}</div>

@@ -97,7 +97,13 @@ export default async function TicketsPage() {
           />
         </div>
 
-        <TicketsTable tickets={tickets} />
+        <TicketsTable
+          tickets={tickets.map((t) => ({
+            ...t,
+            lastMessageAt: t.lastMessageAt.toISOString(),
+            createdAt: t.createdAt.toISOString(),
+          }))}
+        />
       </div>
     </TicketsLayout>
   );
