@@ -10,9 +10,6 @@ export default async function TicketsPage() {
   await requireSession();
 
   const tickets = await prisma.ticket.findMany({
-    include: { customer: true, assignedTo: true },
-    orderBy: { lastMessageAt: "desc" },
-    take: 100,
     select: {
       id: true,
       code: true,
@@ -34,6 +31,8 @@ export default async function TicketsPage() {
         },
       },
     },
+    orderBy: { lastMessageAt: "desc" },
+    take: 100,
   });
 
   const [statusCounts, priorityCounts, totalCount] = await Promise.all([
