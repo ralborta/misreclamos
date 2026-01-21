@@ -12,7 +12,7 @@ export default async function ConfiguracionPage() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900">⚙️ Configuración</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Gestiona la base de conocimientos y configura el comportamiento del agente
+            Gestiona la base de conocimientos y configura el comportamiento del sistema
           </p>
         </div>
 

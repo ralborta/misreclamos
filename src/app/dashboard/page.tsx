@@ -178,17 +178,17 @@ export default async function DashboardPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">📊 Dashboard</h1>
           <p className="mt-1 text-sm text-slate-600">
-            Vista general del sistema de tickets
+            Vista general del sistema de reclamos
           </p>
         </div>
 
         {/* KPIs principales */}
         <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <KPICard
-            title="Total Tickets"
+            title="Total Casos"
             value={stats.totalTickets}
-            icon="🎫"
-            color="bg-blue-50 text-blue-600"
+            icon="⚖️"
+            color="bg-emerald-50 text-emerald-600"
           />
           <KPICard
             title="Creados Hoy"

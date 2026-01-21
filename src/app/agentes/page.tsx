@@ -23,20 +23,20 @@ export default async function AgentesPage() {
     <TicketsLayout>
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Agentes de Soporte</h1>
+          <h1 className="text-3xl font-bold text-slate-900">👨‍⚖️ Abogados</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Gestiona el equipo de soporte y asigna tickets
+            Gestiona el equipo de abogados y asigna casos
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl bg-blue-50 p-6 ring-1 ring-blue-100">
-            <div className="text-sm font-medium text-blue-600">Total Agentes</div>
-            <div className="mt-2 text-3xl font-bold text-blue-900">{totalAgentes}</div>
+            <div className="text-sm font-medium text-emerald-600">Total Abogados</div>
+            <div className="mt-2 text-3xl font-bold text-emerald-900">{totalAgentes}</div>
           </div>
-          <div className="rounded-xl bg-emerald-50 p-6 ring-1 ring-emerald-100">
-            <div className="text-sm font-medium text-emerald-600">Con Tickets Asignados</div>
-            <div className="mt-2 text-3xl font-bold text-emerald-900">{agentesActivos}</div>
+          <div className="rounded-xl bg-teal-50 p-6 ring-1 ring-teal-100">
+            <div className="text-sm font-medium text-teal-600">Con Casos Asignados</div>
+            <div className="mt-2 text-3xl font-bold text-teal-900">{agentesActivos}</div>
           </div>
           <div className="rounded-xl bg-slate-50 p-6 ring-1 ring-slate-100">
             <div className="text-sm font-medium text-slate-600">Disponibles</div>
