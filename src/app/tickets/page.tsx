@@ -9,7 +9,8 @@ type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 export default async function TicketsPage() {
   await requireSession();
 
-  const tickets = await prisma.ticket.findMany({
+  try {
+    const tickets = await prisma.ticket.findMany({
     select: {
       id: true,
       code: true,
@@ -35,78 +36,98 @@ export default async function TicketsPage() {
     take: 100,
   });
 
-  const [statusCounts, priorityCounts, totalCount] = await Promise.all([
-    prisma.ticket.groupBy({ by: ["status"], _count: { _all: true } }),
-    prisma.ticket.groupBy({ by: ["priority"], _count: { _all: true } }),
-    prisma.ticket.count(),
-  ]);
+    const [statusCounts, priorityCounts, totalCount] = await Promise.all([
+      prisma.ticket.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.ticket.groupBy({ by: ["priority"], _count: { _all: true } }),
+      prisma.ticket.count(),
+    ]);
 
-  const statusCountMap = Object.fromEntries(
-    statusCounts.map((c: { status: string; _count: { _all: number } }) => [c.status as TicketStatus, c._count._all])
-  ) as Partial<Record<TicketStatus, number>>;
-  const priorityCountMap = Object.fromEntries(
-    priorityCounts.map((c: { priority: string; _count: { _all: number } }) => [c.priority as TicketPriority, c._count._all])
-  ) as Partial<Record<TicketPriority, number>>;
+    const statusCountMap = Object.fromEntries(
+      statusCounts.map((c: { status: string; _count: { _all: number } }) => [c.status as TicketStatus, c._count._all])
+    ) as Partial<Record<TicketStatus, number>>;
+    const priorityCountMap = Object.fromEntries(
+      priorityCounts.map((c: { priority: string; _count: { _all: number } }) => [c.priority as TicketPriority, c._count._all])
+    ) as Partial<Record<TicketPriority, number>>;
 
-  return (
-    <TicketsLayout>
-      <div className="w-full space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg">
-                🎫
-              </span>
-              Todos los Tickets
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Vista general de <span className="font-semibold text-indigo-600">{totalCount}</span>{" "}
-              {totalCount === 1 ? "ticket" : "tickets"} en el sistema
+    return (
+      <TicketsLayout>
+        <div className="w-full space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg">
+                  🎫
+                </span>
+                Todos los Reclamos
+              </h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Vista general de <span className="font-semibold text-indigo-600">{totalCount}</span>{" "}
+                {totalCount === 1 ? "reclamo" : "reclamos"} en el sistema
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard
+              label="Abiertos"
+              value={statusCountMap.OPEN || 0}
+              color="blue"
+              icon="📋"
+              description="Reclamos pendientes de atención"
+            />
+            <SummaryCard
+              label="En Progreso"
+              value={statusCountMap.IN_PROGRESS || 0}
+              color="amber"
+              icon="⚙️"
+              description="Siendo atendidos actualmente"
+            />
+            <SummaryCard
+              label="Esperando Cliente"
+              value={statusCountMap.WAITING_CUSTOMER || 0}
+              color="lime"
+              icon="⏳"
+              description="Aguardando respuesta"
+            />
+            <SummaryCard
+              label="Urgentes"
+              value={priorityCountMap.URGENT || 0}
+              color="rose"
+              icon="🚨"
+              description="Requieren atención inmediata"
+            />
+          </div>
+
+          <TicketsTable
+            tickets={tickets.map((t) => ({
+              ...t,
+              lastMessageAt: t.lastMessageAt.toISOString(),
+              createdAt: t.createdAt.toISOString(),
+            }))}
+          />
+        </div>
+      </TicketsLayout>
+    );
+  } catch (error: any) {
+    console.error("[TicketsPage] Error:", error);
+    return (
+      <TicketsLayout>
+        <div className="w-full space-y-6">
+          <div className="rounded-lg bg-red-50 border border-red-200 p-6">
+            <h2 className="text-xl font-semibold text-red-900 mb-2">⚠️ Error al cargar reclamos</h2>
+            <p className="text-red-700 mb-4">
+              {error.message?.includes("DATABASE_URL") || error.message?.includes("connect")
+                ? "La base de datos no está configurada. Por favor, configura DATABASE_URL en Vercel."
+                : `Error: ${error.message || "Error desconocido"}`}
+            </p>
+            <p className="text-sm text-red-600">
+              Verifica que DATABASE_URL esté configurado en las variables de entorno de Vercel.
             </p>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard
-            label="Abiertos"
-            value={statusCountMap.OPEN || 0}
-            color="blue"
-            icon="📋"
-            description="Tickets pendientes de atención"
-          />
-          <SummaryCard
-            label="En Progreso"
-            value={statusCountMap.IN_PROGRESS || 0}
-            color="amber"
-            icon="⚙️"
-            description="Siendo atendidos actualmente"
-          />
-          <SummaryCard
-            label="Esperando Cliente"
-            value={statusCountMap.WAITING_CUSTOMER || 0}
-            color="lime"
-            icon="⏳"
-            description="Aguardando respuesta"
-          />
-          <SummaryCard
-            label="Urgentes"
-            value={priorityCountMap.URGENT || 0}
-            color="rose"
-            icon="🚨"
-            description="Requieren atención inmediata"
-          />
-        </div>
-
-        <TicketsTable
-          tickets={tickets.map((t) => ({
-            ...t,
-            lastMessageAt: t.lastMessageAt.toISOString(),
-            createdAt: t.createdAt.toISOString(),
-          }))}
-        />
-      </div>
-    </TicketsLayout>
-  );
+      </TicketsLayout>
+    );
+  }
 }
 
 function SummaryCard({
