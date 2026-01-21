@@ -26,7 +26,13 @@ export const sessionOptions: SessionOptions = {
 };
 
 export async function getSession() {
-  return getIronSession<SessionData>(await cookies(), sessionOptions);
+  try {
+    return getIronSession<SessionData>(await cookies(), sessionOptions);
+  } catch (error) {
+    console.error("Error al obtener sesión:", error);
+    // Retornar sesión vacía si hay error
+    return { user: undefined } as SessionData;
+  }
 }
 
 export async function requireSession() {
