@@ -176,7 +176,7 @@ export default async function DashboardPage() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">📊 Dashboard</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
           <p className="mt-1 text-sm text-slate-600">
             Vista general del sistema de reclamos
           </p>
@@ -192,36 +192,30 @@ export default async function DashboardPage() {
           <KPICard
             title="Creados Hoy"
             value={stats.ticketsToday}
-            icon="📥"
-            color="bg-emerald-50 text-emerald-600"
+            color="bg-slate-50 text-slate-700"
           />
           <KPICard
             title="Resueltos Hoy"
             value={stats.resolvedToday}
-            icon="✅"
-            color="bg-green-50 text-green-600"
+            color="bg-slate-50 text-slate-700"
           />
           <KPICard
             title="Tiempo Promedio"
             value={`${stats.avgResolutionTime}h`}
-            icon="⏱️"
-            color="bg-amber-50 text-amber-600"
+            color="bg-slate-50 text-slate-700"
           />
         </div>
 
         {/* Alerta de urgentes */}
         {stats.urgentUnassigned > 0 && (
-          <div className="mb-8 rounded-2xl bg-rose-50 p-6 shadow-sm ring-1 ring-rose-200">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🚨</span>
-              <div>
-                <h3 className="font-semibold text-rose-900">
-                  ¡Atención! {stats.urgentUnassigned} ticket(s) urgente(s) sin asignar
-                </h3>
-                <p className="text-sm text-rose-700">
-                  Requieren atención inmediata
-                </p>
-              </div>
+          <div className="mb-8 rounded-lg bg-orange-50 border border-orange-200 p-5">
+            <div>
+              <h3 className="font-semibold text-orange-900">
+                Atención: {stats.urgentUnassigned} caso(s) urgente(s) sin asignar
+              </h3>
+              <p className="text-sm text-orange-700 mt-1">
+                Requieren atención inmediata
+              </p>
             </div>
           </div>
         )}
@@ -229,9 +223,9 @@ export default async function DashboardPage() {
         {/* Grid principal */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Tickets por Estado */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="rounded-lg bg-white p-6 border border-slate-200 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              📋 Tickets por Estado
+              Casos por Estado
             </h2>
             <div className="space-y-3">
               {stats.ticketsByStatus.map((item: any) => (
@@ -247,9 +241,9 @@ export default async function DashboardPage() {
           </div>
 
           {/* Tickets por Prioridad */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="rounded-lg bg-white p-6 border border-slate-200 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              🔥 Tickets por Prioridad
+              Casos por Prioridad
             </h2>
             <div className="space-y-3">
               {stats.ticketsByPriority.map((item: any) => (
@@ -265,9 +259,9 @@ export default async function DashboardPage() {
           </div>
 
           {/* Tendencia últimos 7 días */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="rounded-lg bg-white p-6 border border-slate-200 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              📈 Últimos 7 días
+              Últimos 7 días
             </h2>
             <div className="flex items-end justify-between gap-2 h-48">
               {stats.last7Days.map((day: any) => {
@@ -279,7 +273,7 @@ export default async function DashboardPage() {
                       {day.count}
                     </div>
                     <div
-                      className="w-full bg-indigo-500 rounded-t-lg transition-all"
+                      className="w-full bg-slate-900 rounded-t transition-all"
                       style={{ height: `${height}%`, minHeight: day.count > 0 ? "8px" : "2px" }}
                     />
                     <div className="mt-2 text-xs text-slate-500">
@@ -292,26 +286,26 @@ export default async function DashboardPage() {
           </div>
 
           {/* Top Agentes */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+          <div className="rounded-lg bg-white p-6 border border-slate-200 shadow-sm">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              👥 Top Agentes
+              Top Abogados
             </h2>
             <div className="space-y-3">
               {stats.topAgents.length === 0 ? (
-                <p className="text-sm text-slate-500">No hay agentes con tickets asignados.</p>
+                <p className="text-sm text-slate-500">No hay abogados con casos asignados.</p>
               ) : (
                 stats.topAgents.map((agent: any, index: number) => (
                   <div key={agent.id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-                        #{index + 1}
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+                        {index + 1}
                       </span>
                       <div>
                         <div className="text-sm font-medium text-slate-900">{agent.name}</div>
                         <div className="text-xs text-slate-500">{agent.email}</div>
                       </div>
                     </div>
-                    <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                    <div className="rounded-lg bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
                       {agent.activeTickets}
                     </div>
                   </div>
@@ -323,7 +317,7 @@ export default async function DashboardPage() {
           {/* Top Empresas */}
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              🏢 Top Empresas con más Tickets
+              Top Empresas con más Casos
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
               {stats.topCompanies.length === 0 ? (
@@ -332,11 +326,11 @@ export default async function DashboardPage() {
                 stats.topCompanies.map((company: any, index: number) => (
                   <div
                     key={company.id}
-                    className="rounded-xl border border-slate-200 p-4 hover:border-indigo-300 hover:shadow-md transition-all"
+                    className="rounded-lg border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl">#{index + 1}</span>
-                      <span className="text-xl font-bold text-indigo-600">
+                      <span className="text-sm font-semibold text-slate-500">{index + 1}</span>
+                      <span className="text-xl font-bold text-slate-900">
                         {company.totalTickets}
                       </span>
                     </div>
@@ -358,24 +352,18 @@ export default async function DashboardPage() {
 function KPICard({
   title,
   value,
-  icon,
   color,
 }: {
   title: string;
   value: string | number;
-  icon: string;
   color: string;
 }) {
+  const [bgColor, textColor] = color.split(" ");
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-600">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
-        </div>
-        <div className={`rounded-2xl p-3 ${color}`}>
-          <span className="text-2xl">{icon}</span>
-        </div>
+    <div className="rounded-lg bg-white p-5 border border-slate-200 shadow-sm">
+      <div>
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">{title}</p>
+        <p className="text-3xl font-bold text-slate-900">{value}</p>
       </div>
     </div>
   );
@@ -415,13 +403,13 @@ function getStatusColor(status: string): string {
     case "OPEN":
       return "bg-blue-500";
     case "IN_PROGRESS":
-      return "bg-amber-500";
+      return "bg-slate-600";
     case "WAITING_CUSTOMER":
-      return "bg-lime-500";
+      return "bg-slate-500";
     case "RESOLVED":
-      return "bg-emerald-500";
-    case "CLOSED":
       return "bg-slate-400";
+    case "CLOSED":
+      return "bg-slate-300";
     default:
       return "bg-slate-300";
   }
@@ -430,11 +418,11 @@ function getStatusColor(status: string): string {
 function getPriorityColor(priority: string): string {
   switch (priority) {
     case "URGENT":
-      return "bg-rose-500";
+      return "bg-orange-500";
     case "HIGH":
-      return "bg-amber-500";
+      return "bg-orange-400";
     case "NORMAL":
-      return "bg-emerald-500";
+      return "bg-blue-500";
     case "LOW":
       return "bg-slate-400";
     default:
