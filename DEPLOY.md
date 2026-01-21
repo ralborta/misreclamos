@@ -1,204 +1,153 @@
-# Guía de Deploy - Empliados Support Desk
+# Guía de Deploy - MisReclamos
 
-## ✅ Estado Actual
-- ✅ Base de datos en Railway con migración aplicada
-- ✅ Código en GitHub: https://github.com/ralborta/empliados-support-desk
-- ✅ Build local exitoso (Next.js 16 + Prisma 6)
-- ⏳ Esperando deploy en Vercel
+## 🚂 Railway (Base de Datos PostgreSQL)
 
-## 📦 Stack Técnico
-- **Frontend/Backend**: Next.js 16.1.1 (App Router, TypeScript, Tailwind)
-- **Base de Datos**: PostgreSQL en Railway
-- **ORM**: Prisma 6.19.1 (downgrade desde v7 por compatibilidad)
-- **Auth**: iron-session
-- **Deployment**: Vercel
+### Opción 1: Desde la Web (Recomendado)
 
-## Variables de Entorno para Vercel
+1. Ve a https://railway.app
+2. Click en **"New Project"**
+3. Selecciona **"Deploy from GitHub repo"**
+4. Conecta tu cuenta de GitHub y selecciona el repo `misreclamos`
+5. Railway creará un proyecto vacío
 
-Configura estas variables en **Vercel → Project Settings → Environment Variables**:
+### Agregar Base de Datos PostgreSQL
 
-```
-DATABASE_URL=postgresql://postgres:QaVYMOysPnKLDIthwOrsAcPISAVnRCzj@gondola.proxy.rlwy.net:12745/railway?sslmode=require
-APP_PASSWORD=empliados-support-2025-secure
-SESSION_PASSWORD=empliados-session-secret-key-32-chars-minimum-required-for-security
-BUILDERBOT_BOT_ID=7d4339ee-2a9b-424e-92f6-ad7790c1662f
-BUILDERBOT_API_KEY=bb-04c2baf7-5db2-4c43-9cfc-35bbbb660812
-BUILDERBOT_BASE_URL=https://app.builderbot.cloud
-OPENAI_API_KEY=sk-proj-...tu-api-key...
-```
+1. En tu proyecto Railway, click en **"+ New"**
+2. Selecciona **"Database"** → **"Add PostgreSQL"**
+3. Railway creará automáticamente una base de datos PostgreSQL
+4. Click en la base de datos → **"Variables"** tab
+5. Copia el `DATABASE_URL` (lo necesitarás para Vercel)
 
-**IMPORTANTE:** 
-- Las contraseñas pueden cambiarse por otras más seguras si lo deseas
-- El `BUILDERBOT_BOT_ID` y `BUILDERBOT_API_KEY` son los que te proporciona BuilderBot.cloud
-- El `OPENAI_API_KEY` es necesario para generar resúmenes automáticos de las conversaciones
+### Aplicar Migraciones
 
-## Pasos para Deploy en Vercel
+**Opción A: Desde Railway Dashboard**
+1. Ve a tu base de datos en Railway
+2. Click en **"Query"** tab
+3. Copia y pega el contenido de `prisma/migrations/20251226145518_init/migration.sql`
+4. Ejecuta la query
+5. Repite con las demás migraciones en orden
 
-1. Ve a https://vercel.com
-2. Click en "Add New Project"
-3. Conecta el repo: `ralborta/empliados-support-desk`
-4. Framework Preset: Next.js (debería detectarlo automáticamente)
-5. Build Command: `pnpm install --frozen-lockfile && pnpm build` (o deja el default)
-6. Output Directory: `.next` (default)
-7. En "Environment Variables", pega las 5 variables de arriba
-8. Click "Deploy"
-
-## Configurar BuilderBot.cloud
-
-Una vez que tengas la URL de Vercel (ej: `https://empliados-support-desk.vercel.app`):
-
-### 1. Configurar Webhook en BuilderBot
-
-Ve a tu proyecto en BuilderBot.cloud → **Desarrollador** → **Webhooks** → **message.incoming**
-
-**URL del Webhook:**
-```
-https://TU-APP.vercel.app/api/whatsapp/inbound
-```
-
-**Método:** POST  
-**Content-Type:** application/json
-
-BuilderBot enviará automáticamente este formato:
-```json
-{
-  "eventName": "message.incoming",
-  "data": {
-    "body": "texto del mensaje",
-    "name": "Nombre del Cliente",
-    "from": "5491112345678",
-    "attachment": [],
-    "projectId": "7d4339ee-2a9b-424e-92f6-ad7790c1662f"
-  }
-}
-```
-
-### 2. ¿Cómo funciona?
-
-1. **Cliente envía WhatsApp** → BuilderBot recibe el mensaje
-2. **BuilderBot hace POST** → Tu webhook en Vercel
-3. **Tu backend crea ticket** → Guarda en base de datos
-4. **Tu backend envía respuesta** → Vía API de BuilderBot → Cliente recibe respuesta automática
-
-### 3. Mensajes Automáticos
-
-El sistema enviará automáticamente:
-- ✅ Confirmación cuando se crea un ticket nuevo
-- ✅ Notificación cuando se escala a un agente humano
-- ✅ Incluye el código del ticket (ej: `TKT-20250129-ABC123`)
-
-## Pruebas Locales
-
+**Opción B: Desde Railway CLI**
 ```bash
-pnpm dev
+# Instalar Railway CLI (si no lo tienes)
+npm i -g @railway/cli
+
+# Login
+railway login
+
+# Link al proyecto
+railway link
+
+# Aplicar migraciones
+railway run pnpm prisma migrate deploy
 ```
 
-Luego:
-- Abre http://localhost:3000/login
-- Password: `empliados-support-2025-secure`
-- Deberías ver el dashboard de tickets
+### Módulos en Railway
 
-## Prueba del Webhook
+Sí, Railway tiene **módulos/plugins** para bases de datos:
 
-```bash
-curl -X POST http://localhost:3000/api/whatsapp/inbound \
-  -H "Content-Type: application/json" \
-  -d '{
-    "eventName": "message.incoming",
-    "data": {
-      "body": "Hola, no responde Walter",
-      "name": "Cliente Test",
-      "from": "5491112345678",
-      "attachment": [],
-      "projectId": "7d4339ee-2a9b-424e-92f6-ad7790c1662f"
-    }
-  }'
-```
+- **PostgreSQL**: Base de datos estándar
+- **PostgreSQL 18 HA Cluster**: Con replicación y alta disponibilidad
+- **TimescaleDB + PostGIS**: Para datos temporales y geográficos
+- **Redis**: Cache y sesiones
+- **MySQL**: Base de datos alternativa
 
-Debería:
-1. Crear un ticket nuevo
-2. Guardar el mensaje en la base de datos
-3. Responder con un JSON indicando éxito
-4. (Si está bien configurado) Enviar mensaje automático al cliente por WhatsApp
+Para este proyecto, **PostgreSQL estándar** es suficiente.
 
 ---
 
-## 🤖 Gestión de Mensajes Temporales y Resúmenes con IA
+## ☁️ Vercel (Deployment de la App)
 
-### Ciclo de vida de los mensajes:
+### Opción 1: Desde la Web (Recomendado)
 
-**FASE 1: Conversación Activa**
-- Los mensajes se almacenan temporalmente en `TicketMessage`
-- Permiten tracking en tiempo real de la conversación
+1. Ve a https://vercel.com
+2. Click en **"Add New Project"**
+3. **Import Git Repository** → Selecciona `misreclamos`
+4. Framework Preset: **Next.js** (debería detectarlo automáticamente)
+5. Build Command: `pnpm install --frozen-lockfile && pnpm build`
+6. Output Directory: `.next` (default)
 
-**FASE 2: Cierre con Resumen**
-- Cuando se cierra o escala un caso, OpenAI resume toda la conversación
-- El resumen se guarda en `Ticket.aiSummary` y `Ticket.resolution`
-- Los mensajes temporales se **BORRAN** para ahorrar espacio
-- Solo queda el resumen en el ticket
+### Variables de Entorno en Vercel
 
-### Endpoints para cerrar casos:
+En **"Environment Variables"**, agrega todas estas:
 
-#### 1. Escalar a Soporte Humano
+```env
+# Base de datos (de Railway)
+DATABASE_URL=postgresql://postgres:password@host:port/railway?sslmode=require
+
+# Autenticación (opcional por ahora, pero recomendado)
+APP_PASSWORD=tu-password-seguro-aqui
+SESSION_PASSWORD=tu-session-secret-key-minimo-32-caracteres-para-seguridad
+
+# BuilderBot / WhatsApp
+BUILDERBOT_BOT_ID=tu-bot-id-de-builderbot
+BUILDERBOT_API_KEY=tu-api-key-de-builderbot
+BUILDERBOT_BASE_URL=https://app.builderbot.cloud
+BUILDERBOT_API_URL=https://app.builderbot.cloud
+
+# Vercel Blob Storage (para adjuntos)
+BLOB_READ_WRITE_TOKEN=tu-token-de-vercel-blob
+
+# OpenAI (para resúmenes automáticos)
+OPENAI_API_KEY=sk-proj-tu-api-key-de-openai
+```
+
+**Nota**: Por ahora puedes dejar `APP_PASSWORD` vacío para hacer login sin password.
+
+7. Click en **"Deploy"**
+
+### Opción 2: Desde Vercel CLI
 
 ```bash
-POST /api/tickets/{ticketId}/escalate
+# Instalar Vercel CLI (si no lo tienes)
+npm i -g vercel
+
+# Login
+vercel login
+
+# Deploy
+vercel
+
+# Agregar variables de entorno
+vercel env add DATABASE_URL
+vercel env add APP_PASSWORD
+# ... etc
 ```
 
-**¿Cuándo usar?**
-- El Agente IA no puede resolver el problema
-- Cliente insiste después de 3+ mensajes
-- Detecta keywords críticas: "urgente", "no funciona", etc.
+---
 
-**Respuesta:**
-```json
-{
-  "ok": true,
-  "ticketCode": "TKT-20241229-ABC123",
-  "aiSummary": "Cliente reporta que Walter no responde desde hace 1h...",
-  "resolution": "Escalado a soporte humano para atención inmediata.",
-  "messagesDeleted": 5
-}
-```
+## 🔗 Configurar Webhook en BuilderBot
 
-#### 2. Cerrar Caso Resuelto por IA
+Una vez que Vercel te dé la URL (ej: `https://misreclamos.vercel.app`):
 
-```bash
-POST /api/tickets/{ticketId}/close-by-ai
-```
+1. Ve a BuilderBot.cloud → Tu proyecto
+2. **Desarrollador** → **Webhooks**
+3. Agrega webhook para `message.incoming`:
+   - **URL**: `https://misreclamos.vercel.app/api/whatsapp/inbound`
+   - **Método**: POST
+   - **Content-Type**: application/json
+4. Agrega webhook para `message.outgoing` (misma URL)
 
-**¿Cuándo usar?**
-- El Agente IA resolvió completamente el problema
-- Cliente satisfecho con la respuesta automática
-- No requiere intervención humana
+---
 
-**Respuesta:**
-```json
-{
-  "ok": true,
-  "ticketCode": "TKT-20241229-ABC123",
-  "aiSummary": "Cliente preguntó por horarios de atención.",
-  "resolution": "Se informó horario de lunes a viernes 9-18hs. Cliente satisfecho.",
-  "messagesDeleted": 3
-}
-```
+## ✅ Verificar que todo funciona
 
-### Ventajas del sistema:
+1. **Login**: Ve a `https://tu-app.vercel.app/login` (debería funcionar sin password si no configuraste APP_PASSWORD)
+2. **Base de datos**: Deberías poder ver tickets/reclamos en el dashboard
+3. **WhatsApp**: Envía un mensaje de prueba a tu bot de BuilderBot
 
-✅ **Ahorro de espacio:** Solo guarda resúmenes, no conversaciones completas  
-✅ **Contexto claro:** Agentes humanos ven resumen conciso, no mensajes dispersos  
-✅ **Métricas precisas:** Distingue casos resueltos por IA vs escalados  
-✅ **Auditoría:** Registro de qué pasó sin data innecesaria  
+---
 
-### Ejemplo de flujo completo:
+## 🐛 Troubleshooting
 
-```
-1. Cliente envía 5 mensajes → BuilderBot → Webhook
-2. Tu backend guarda 5 mensajes temporales en DB
-3. Agente IA decide: "Necesita escalar"
-4. POST /api/tickets/{id}/escalate
-5. OpenAI resume: "Cliente reporta Walter no responde. Urgente."
-6. Se guarda el resumen en Ticket
-7. Se BORRAN los 5 mensajes temporales
-8. Agente humano ve solo el resumen
-```
+### Error: "DATABASE_URL not found"
+- Verifica que agregaste la variable en Vercel
+- Asegúrate de copiar el `DATABASE_URL` completo de Railway
+
+### Error: "Migration failed"
+- Verifica que aplicaste todas las migraciones en Railway
+- Revisa los logs en Railway → Database → Logs
+
+### Error: "APP_PASSWORD no configurada"
+- Esto es normal, el login funcionará sin password
+- Si quieres activarlo, agrega `APP_PASSWORD` en Vercel
