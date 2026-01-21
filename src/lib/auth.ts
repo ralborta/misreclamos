@@ -16,7 +16,7 @@ export type SessionData = {
 const fallbackPassword = "change-this-session-password-in-env-please";
 
 export const sessionOptions: SessionOptions = {
-  cookieName: "empliados_support_session",
+  cookieName: "misreclamos_session",
   password: process.env.SESSION_PASSWORD || fallbackPassword,
   cookieOptions: {
     secure: process.env.NODE_ENV === "production",

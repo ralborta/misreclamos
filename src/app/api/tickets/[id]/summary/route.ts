@@ -33,7 +33,7 @@ export async function POST(
 
     if (!ticket) {
       return NextResponse.json(
-        { error: "Ticket no encontrado" },
+        { error: "Reclamo no encontrado" },
         { status: 404 }
       );
     }
@@ -45,7 +45,7 @@ export async function POST(
       });
     }
 
-    console.log(`[Summary] Generando resumen para ticket ${ticket.code} con ${ticket.messages.length} mensajes`);
+    console.log(`[Summary] Generando resumen para reclamo ${ticket.code} con ${ticket.messages.length} mensajes`);
 
     // Formatear mensajes para OpenAI
     const conversationMessages = ticket.messages.map((msg) => ({
@@ -63,7 +63,7 @@ export async function POST(
       data: { aiSummary },
     });
 
-    console.log(`[Summary] ✅ Resumen generado para ticket ${ticket.code}`);
+    console.log(`[Summary] ✅ Resumen generado para reclamo ${ticket.code}`);
 
     return NextResponse.json({
       ok: true,

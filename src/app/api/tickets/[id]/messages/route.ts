@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     });
 
     if (!ticket) {
-      return NextResponse.json({ error: "Ticket no encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "Reclamo no encontrado" }, { status: 404 });
     }
 
     if (!ticket.customer?.phone) {
@@ -98,7 +98,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       data: { aiSummary },
     });
 
-    console.log(`[Messages] ✅ Resumen actualizado para ticket ${id}`);
+    console.log(`[Messages] ✅ Resumen actualizado para reclamo ${id}`);
   } catch (error: any) {
     console.error(`[Messages] ⚠️ Error al actualizar resumen:`, error.message);
     // No fallar si el resumen falla, el mensaje ya se guardó

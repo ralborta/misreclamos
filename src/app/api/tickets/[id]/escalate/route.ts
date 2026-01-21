@@ -4,10 +4,10 @@ import { summarizeConversation, generateResolution } from "@/lib/openai";
 
 /**
  * POST /api/tickets/[id]/escalate
- * Escala un ticket a soporte humano:
+ * Escala un reclamo a soporte humano:
  * - Resume todos los mensajes con IA
  * - Borra los mensajes temporales
- * - Marca el ticket como IN_PROGRESS
+ * - Marca el reclamo como IN_PROGRESS
  */
 export async function POST(
   req: NextRequest,
@@ -28,7 +28,7 @@ export async function POST(
 
     if (!ticket) {
       return NextResponse.json(
-        { error: "Ticket no encontrado" },
+        { error: "Reclamo no encontrado" },
         { status: 404 }
       );
     }
@@ -37,12 +37,12 @@ export async function POST(
     if (ticket.aiSummary) {
       return NextResponse.json({
         ok: true,
-        message: "Ticket ya tiene resumen generado",
+        message: "Reclamo ya tiene resumen generado",
         ticketCode: ticket.code,
       });
     }
 
-    console.log(`[Escalate] Procesando ticket ${ticket.code} con ${ticket.messages.length} mensajes`);
+    console.log(`[Escalate] Procesando reclamo ${ticket.code} con ${ticket.messages.length} mensajes`);
 
     // Formatear mensajes para OpenAI
     const conversationMessages = ticket.messages.map((msg) => ({
@@ -88,7 +88,7 @@ export async function POST(
         where: { ticketId: id },
       });
 
-      console.log(`[Escalate] ✅ Ticket ${ticket.code} escalado. ${ticket.messages.length} mensajes borrados.`);
+      console.log(`[Escalate] ✅ Reclamo ${ticket.code} escalado. ${ticket.messages.length} mensajes borrados.`);
     });
 
     return NextResponse.json({
@@ -102,7 +102,7 @@ export async function POST(
   } catch (error: any) {
     console.error("[Escalate] Error:", error);
     return NextResponse.json(
-      { error: "Error al escalar ticket", details: error.message },
+      { error: "Error al escalar reclamo", details: error.message },
       { status: 500 }
     );
   }

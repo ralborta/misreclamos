@@ -1,6 +1,6 @@
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
 type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
-type TicketCategory = "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER";
+type TicketCategory = "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO";
 type TicketChannel = "WHATSAPP" | "EMAIL" | "WEB";
 type MessageDirection = "INBOUND" | "OUTBOUND" | "INTERNAL_NOTE";
 type MessageFrom = "CUSTOMER" | "BOT" | "HUMAN";
@@ -9,7 +9,7 @@ export function generateTicketCode(date = new Date()) {
   const year = date.getFullYear();
   const stamp = `${date.getMonth() + 1}`.padStart(2, "0") + `${date.getDate()}`.padStart(2, "0");
   const suffix = Math.random().toString().slice(2, 8);
-  return `TCK-${year}-${stamp}-${suffix}`;
+  return `RCL-${year}-${stamp}-${suffix}`;
 }
 
 export const statusLabels: Record<TicketStatus, string> = {
@@ -28,10 +28,15 @@ export const priorityLabels: Record<TicketPriority, string> = {
 };
 
 export const categoryLabels: Record<TicketCategory, string> = {
-  TECH_SUPPORT: "Soporte Técnico",
-  BILLING: "Facturación",
-  SALES: "Ventas",
-  OTHER: "Otro",
+  LABORAL: "Laboral",
+  CIVIL: "Civil",
+  COMERCIAL: "Comercial",
+  PENAL: "Penal",
+  FAMILIA: "Familia",
+  ADMINISTRATIVO: "Administrativo",
+  TRIBUTARIO: "Tributario",
+  PREVISIONAL: "Previsional",
+  OTRO: "Otro",
 };
 
 export const channelLabels: Record<TicketChannel, string> = {

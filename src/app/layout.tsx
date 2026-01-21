@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Empliados Support Desk",
-  description: "WhatsApp + ticketing para agentes Empliados",
+  title: "MisReclamos",
+  description: "Sistema de gestión de reclamos y casos legales",
 };
 
 export default function RootLayout({

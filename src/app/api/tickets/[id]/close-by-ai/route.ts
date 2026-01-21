@@ -4,10 +4,10 @@ import { summarizeConversation, generateResolution } from "@/lib/openai";
 
 /**
  * POST /api/tickets/[id]/close-by-ai
- * Cierra un ticket resuelto automáticamente por IA:
+ * Cierra un reclamo resuelto automáticamente por IA:
  * - Resume todos los mensajes con IA
  * - Borra los mensajes temporales
- * - Marca el ticket como RESOLVED
+ * - Marca el reclamo como RESOLVED
  */
 export async function POST(
   req: NextRequest,
@@ -28,7 +28,7 @@ export async function POST(
 
     if (!ticket) {
       return NextResponse.json(
-        { error: "Ticket no encontrado" },
+        { error: "Reclamo no encontrado" },
         { status: 404 }
       );
     }
@@ -37,12 +37,12 @@ export async function POST(
     if (ticket.aiSummary) {
       return NextResponse.json({
         ok: true,
-        message: "Ticket ya tiene resumen generado",
+        message: "Reclamo ya tiene resumen generado",
         ticketCode: ticket.code,
       });
     }
 
-    console.log(`[CloseByAI] Procesando ticket ${ticket.code} con ${ticket.messages.length} mensajes`);
+    console.log(`[CloseByAI] Procesando reclamo ${ticket.code} con ${ticket.messages.length} mensajes`);
 
     // Formatear mensajes para OpenAI
     const conversationMessages = ticket.messages.map((msg) => ({
@@ -89,7 +89,7 @@ export async function POST(
         where: { ticketId: id },
       });
 
-      console.log(`[CloseByAI] ✅ Ticket ${ticket.code} cerrado por IA. ${ticket.messages.length} mensajes borrados.`);
+      console.log(`[CloseByAI] ✅ Reclamo ${ticket.code} cerrado por IA. ${ticket.messages.length} mensajes borrados.`);
     });
 
     return NextResponse.json({
@@ -103,7 +103,7 @@ export async function POST(
   } catch (error: any) {
     console.error("[CloseByAI] Error:", error);
     return NextResponse.json(
-      { error: "Error al cerrar ticket", details: error.message },
+      { error: "Error al cerrar reclamo", details: error.message },
       { status: 500 }
     );
   }

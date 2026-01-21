@@ -41,7 +41,7 @@ const createTicketSchema = z.object({
   customerName: z.string().optional(),
   contactName: z.string().optional(),
   priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
-  category: z.enum(["TECH_SUPPORT", "BILLING", "SALES", "OTHER"]).optional(),
+  category: z.enum(["LABORAL", "CIVIL", "COMERCIAL", "PENAL", "FAMILIA", "ADMINISTRATIVO", "TRIBUTARIO", "PREVISIONAL", "OTRO"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       contactName: contactName || customerName || "Sin nombre",
       status: "OPEN",
       priority: priority || "NORMAL",
-      category: category || "TECH_SUPPORT",
+      category: category || "OTRO",
       channel: "WEB",
     },
   });

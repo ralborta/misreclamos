@@ -174,13 +174,13 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
         title: actualMessage.split(" ").slice(0, 8).join(" ") || "Consulta",
         status: "OPEN",
         priority: "NORMAL",
-        category: inferCategory(actualMessage) as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
+        category: inferCategory(actualMessage) as "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO",
         channel: "WHATSAPP",
       },
     });
-    console.log(`🎫 Nuevo ticket creado: ${ticket.code} - Empresa: ${companyName}, Contacto: ${contactName}`);
+    console.log(`🎫 Nuevo reclamo creado: ${ticket.code} - Empresa: ${companyName}, Contacto: ${contactName}`);
   } else {
-    console.log(`🎫 Ticket existente: ${ticket.code}`);
+    console.log(`🎫 Reclamo existente: ${ticket.code}`);
   }
 
   const heuristics = inferPriorityAndCategory(actualMessage, undefined, ticket.priority, ticket.category);
@@ -218,7 +218,7 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     where: { id: ticket.id },
     data: {
       priority: heuristics.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
-      category: heuristics.category as "TECH_SUPPORT" | "BILLING" | "SALES" | "OTHER",
+      category: heuristics.category as "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO",
       status: shouldEscalate ? "IN_PROGRESS" : ticket.status,
       lastMessageAt: new Date(),
     },
@@ -245,9 +245,9 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   const solicitaAgente = /tenponder en contacto con un agente de soporte|poner en contacto con un agente|contactar con un agente|hablar con un agente|necesito hablar con un agente/i.test(messageLower);
 
   if (shouldEscalate && solicitaAgente) {
-    autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Ticket: *${ticket.code}*. Te responderemos pronto.`;
+    autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Reclamo: *${ticket.code}*. Te responderemos pronto.`;
   } else if (isNewTicket) {
-    autoReplyMessage = `Hola! Hemos recibido tu mensaje. Ticket: *${ticket.code}*. Un agente lo revisará pronto.`;
+    autoReplyMessage = `Hola! Hemos recibido tu mensaje. Reclamo: *${ticket.code}*. Un abogado lo revisará pronto.`;
   }
 
   // Enviar respuesta automática si corresponde
@@ -423,11 +423,11 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
     where: { id: ticket.id },
     data: {
       lastMessageAt: new Date(),
-      status: "WAITING_CUSTOMER", // El agente envió un mensaje, ahora esperamos respuesta del cliente
+      status: "WAITING_CUSTOMER", // El abogado envió un mensaje, ahora esperamos respuesta del cliente
     },
   });
 
-  console.log(`✅ Mensaje saliente del agente guardado en ticket ${ticket.code}`);
+  console.log(`✅ Mensaje saliente del abogado guardado en reclamo ${ticket.code}`);
 
   return NextResponse.json({ 
     ok: true, 
@@ -453,11 +453,24 @@ function inferPriorityAndCategory(
   if (/(amenaza|legal|fraude|cliente enojado)/.test(lower)) {
     priority = "URGENT";
   }
-  if (/(factura|pago|precio)/.test(lower)) {
-    category = "BILLING";
+  // Detección de categorías legales básicas
+  if (/(laboral|despido|trabajo|empleado|empleador|sueldo|salario)/.test(lower)) {
+    category = "LABORAL";
   }
-  if (/(walter|emilia|silvia|oscar|max)/.test(lower)) {
-    category = "TECH_SUPPORT";
+  if (/(civil|contrato|daño|responsabilidad|propiedad)/.test(lower)) {
+    category = "CIVIL";
+  }
+  if (/(comercial|empresa|sociedad|factura|pago|precio)/.test(lower)) {
+    category = "COMERCIAL";
+  }
+  if (/(penal|delito|robo|hurto|fraude)/.test(lower)) {
+    category = "PENAL";
+  }
+  if (/(familia|divorcio|alimentos|patria|potestad)/.test(lower)) {
+    category = "FAMILIA";
+  }
+  if (/(tributario|afip|impuesto|ganancias|iva)/.test(lower)) {
+    category = "TRIBUTARIO";
   }
   if (metadata && typeof metadata["priority"] === "string") {
     const metaPriority = metadata["priority"] as string;
@@ -470,9 +483,14 @@ function inferPriorityAndCategory(
 
 function inferCategory(text: string): string {
   const lower = text.toLowerCase();
-  if (/(factura|pago|precio)/.test(lower)) return "BILLING";
-  if (/(walter|emilia|silvia|oscar|max)/.test(lower)) return "TECH_SUPPORT";
-  return "TECH_SUPPORT";
+  // Detección de categorías legales básicas
+  if (/(laboral|despido|trabajo|empleado|empleador|sueldo|salario)/.test(lower)) return "LABORAL";
+  if (/(civil|contrato|daño|responsabilidad|propiedad)/.test(lower)) return "CIVIL";
+  if (/(comercial|empresa|sociedad|factura|pago|precio)/.test(lower)) return "COMERCIAL";
+  if (/(penal|delito|robo|hurto|fraude)/.test(lower)) return "PENAL";
+  if (/(familia|divorcio|alimentos|patria|potestad)/.test(lower)) return "FAMILIA";
+  if (/(tributario|afip|impuesto|ganancias|iva)/.test(lower)) return "TRIBUTARIO";
+  return "OTRO";
 }
 
 function decideShouldEscalate({

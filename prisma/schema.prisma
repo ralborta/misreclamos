@@ -1,4 +1,4 @@
-// Prisma schema para Empliados Support Desk
+// Prisma schema para MisReclamos
 generator client {
   provider = "prisma-client-js"
 }
@@ -29,10 +29,15 @@ enum TicketPriority {
 }
 
 enum TicketCategory {
-  TECH_SUPPORT
-  BILLING
-  SALES
-  OTHER
+  LABORAL
+  CIVIL
+  COMERCIAL
+  PENAL
+  FAMILIA
+  ADMINISTRATIVO
+  TRIBUTARIO
+  PREVISIONAL
+  OTRO
 }
 
 enum TicketChannel {
@@ -63,21 +68,35 @@ enum TicketEventType {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  phone     String   @unique
-  name      String?
-  tickets   Ticket[]
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  phone       String   @unique
+  name        String?
+  // Información legal
+  dni         String?  // DNI o CUIT/CUIL
+  email       String?
+  address     String?  // Dirección completa
+  dateOfBirth DateTime? // Fecha de nacimiento
+  notes       String?  // Notas adicionales sobre el cliente
+  tickets     Ticket[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([dni])
+  @@index([email])
 }
 
 model AgentUser {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String
-  phone     String    // Número de teléfono para notificaciones por WhatsApp
-  role      AgentRole
-  tickets   Ticket[]  @relation("AgentAssignments")
-  createdAt DateTime  @default(now())
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  phone          String    // Número de teléfono para notificaciones por WhatsApp
+  role           AgentRole
+  // Información profesional
+  matricula      String?   // Matrícula profesional del abogado
+  especializacion String?  // Especialización legal (ej: "Derecho Laboral", "Derecho Civil")
+  tickets        Ticket[]  @relation("AgentAssignments")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 model Ticket {
@@ -98,6 +117,13 @@ model Ticket {
   aiSummary         String?         // Resumen de la conversación generado por IA
   resolution        String?         // Conclusión de cómo se resolvió el caso
   resolvedByAI      Boolean         @default(false) // Si fue resuelto automáticamente por IA
+  // Información procesal legal
+  expedienteNumber  String?         // Número de expediente/juicio
+  court             String?         // Juzgado/Tribunal
+  legalType         String?         // Tipo específico de caso (ej: "Despido", "Accidente", "Contrato")
+  amount            Decimal?        // Monto en disputa (Decimal para precisión)
+  importantDates    Json?          // Fechas importantes: { audiencia: Date, vencimiento: Date, etc }
+  caseNotes         String?         // Notas internas del abogado sobre el caso
   messages          TicketMessage[]
   events            TicketEvent[]
   tags              TicketTag[]
@@ -109,6 +135,8 @@ model Ticket {
   @@index([customerId])
   @@index([assignedToUserId])
   @@index([lastMessageAt])
+  @@index([expedienteNumber])
+  @@index([category])
 }
 
 model TicketMessage {

@@ -42,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   });
 
   if (!currentTicket) {
-    return NextResponse.json({ error: "Ticket no encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Reclamo no encontrado" }, { status: 404 });
   }
 
   // Detectar si se está asignando a un nuevo agente
@@ -66,13 +66,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (isNewAssignment && ticket.assignedTo) {
     try {
       const summary = ticket.aiSummary || "No hay resumen disponible aún.";
-      const message = `🎫 *Nuevo ticket asignado*\n\n` +
-        `Ticket: *${ticket.code}*\n` +
+      const message = `🎫 *Nuevo reclamo asignado*\n\n` +
+        `Reclamo: *${ticket.code}*\n` +
         `Cliente: ${ticket.customer?.name || ticket.customer?.phone}\n` +
         `Prioridad: ${ticket.priority}\n` +
         `Estado: ${ticket.status}\n\n` +
         `📋 *Resumen:*\n${summary}\n\n` +
-        `👉 Ver en panel: https://empliados-support-desk.vercel.app/tickets/${ticket.id}`;
+        `👉 Ver en panel: [URL_DEL_PANEL]/tickets/${ticket.id}`;
 
       await sendWhatsAppMessage({
         number: ticket.assignedTo.phone,
@@ -81,7 +81,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
       console.log(`[Tickets] ✅ Notificación enviada a ${ticket.assignedTo.name} (${ticket.assignedTo.phone})`);
     } catch (error: any) {
-      console.error(`[Tickets] ⚠️ Error al notificar al agente:`, error.message);
+      console.error(`[Tickets] ⚠️ Error al notificar al abogado:`, error.message);
       // No fallar si la notificación falla
     }
   }

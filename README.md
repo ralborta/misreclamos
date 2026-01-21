@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MisReclamos
 
-## Getting Started
+Sistema de gestión de reclamos y casos legales con integración de WhatsApp.
 
-First, run the development server:
+## Stack Técnico
+
+- **Frontend/Backend**: Next.js 16.1.1 (App Router, TypeScript, Tailwind)
+- **Base de Datos**: PostgreSQL
+- **ORM**: Prisma 6.19.1
+- **Auth**: iron-session
+- **WhatsApp**: BuilderBot.cloud
+- **Storage**: Vercel Blob (para adjuntos)
+- **IA**: OpenAI (para resúmenes automáticos)
+
+## Configuración
+
+### Variables de Entorno
+
+Copia `env.example` a `.env` y configura las siguientes variables:
+
+- `DATABASE_URL`: Connection string de PostgreSQL
+- `APP_PASSWORD`: Password para login de la aplicación
+- `SESSION_PASSWORD`: Secret para iron-session (mínimo 32 caracteres)
+- `BUILDERBOT_BOT_ID`: ID del bot en BuilderBot.cloud
+- `BUILDERBOT_API_KEY`: API key de BuilderBot
+- `BUILDERBOT_BASE_URL`: URL base de BuilderBot (default: https://app.builderbot.cloud)
+- `BLOB_READ_WRITE_TOKEN`: Token de Vercel Blob para adjuntos
+- `OPENAI_API_KEY`: API key de OpenAI para resúmenes automáticos
+
+### Instalación
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm prisma generate
+pnpm prisma migrate dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Desarrollo
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Integración de WhatsApp
 
-## Learn More
+El sistema está integrado con BuilderBot.cloud para recibir y enviar mensajes de WhatsApp.
 
-To learn more about Next.js, take a look at the following resources:
+### Webhook
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Configura el webhook en BuilderBot.cloud apuntando a:
+```
+https://tu-dominio.vercel.app/api/whatsapp/inbound
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El webhook procesa:
+- `message.incoming`: Mensajes entrantes del cliente
+- `message.outgoing`: Mensajes salientes del agente
 
-## Deploy on Vercel
+### Características
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- ✅ Idempotencia por `externalMessageId`
+- ✅ Procesamiento de adjuntos (imágenes, videos, documentos, PDFs)
+- ✅ Subida automática a Vercel Blob Storage
+- ✅ Creación automática de reclamos
+- ✅ Respuestas automáticas
+- ✅ Escalación automática según keywords
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estructura del Proyecto
+
+- `src/app/api/whatsapp/inbound/route.ts`: Webhook principal de WhatsApp
+- `src/lib/builderbot.ts`: Servicio para enviar mensajes
+- `src/lib/blob.ts`: Manejo de adjuntos
+- `src/lib/tickets.ts`: Utilidades para reclamos
+- `prisma/schema.prisma`: Schema de base de datos
+
+## Licencia
+
+Privado
