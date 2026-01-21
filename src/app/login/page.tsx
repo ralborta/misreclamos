@@ -33,19 +33,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-500/30 text-4xl font-bold mb-4">
-            ⚖️
+        <div className="text-center mb-10">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-lg bg-slate-900 text-white text-3xl font-bold mb-4 shadow-sm">
+            ⚖
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">MisReclamos</h1>
-          <p className="text-slate-600">Sistema de gestión legal</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">MisReclamos</h1>
+          <p className="text-slate-600 text-sm">Sistema de gestión legal</p>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl bg-white p-8 shadow-xl border border-slate-200/60">
+        <div className="rounded-lg bg-white p-8 shadow-sm border border-slate-200">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-slate-900 mb-1">Acceso interno</h2>
             <p className="text-sm text-slate-500">Ingresa tus credenciales para continuar</p>
@@ -59,7 +59,7 @@ export default function LoginPage() {
               <input
                 id="password"
                 type="password"
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none transition-all"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Dejar vacío si APP_PASSWORD no está configurado"
@@ -73,25 +73,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all hover:shadow-xl hover:shadow-emerald-500/40 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <>
-                  <span className="mr-2">⏳</span>
-                  Ingresando...
-                </>
-              ) : (
-                <>
-                  <span className="mr-2">🔐</span>
-                  Ingresar
-                </>
-              )}
+              {loading ? "Ingresando..." : "Ingresar"}
             </button>
           </form>
         </div>
 
         {/* Footer */}
-        <p className="text-center mt-6 text-xs text-slate-500">
+        <p className="text-center mt-8 text-xs text-slate-500">
           Sistema de gestión de reclamos y casos legales
         </p>
       </div>

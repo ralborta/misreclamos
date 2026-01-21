@@ -187,8 +187,7 @@ export default async function DashboardPage() {
           <KPICard
             title="Total Casos"
             value={stats.totalTickets}
-            icon="⚖️"
-            color="bg-emerald-50 text-emerald-600"
+            color="bg-blue-50 text-blue-700"
           />
           <KPICard
             title="Creados Hoy"
