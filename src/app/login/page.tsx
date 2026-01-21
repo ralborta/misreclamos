@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <div className="text-lg font-semibold text-slate-700">Empliados Support Desk</div>
+          <div className="text-lg font-semibold text-slate-700">MisReclamos</div>
           <div className="text-sm text-slate-500">Acceso interno</div>
         </div>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -50,7 +50,7 @@ export default function LoginPage() {
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              placeholder="Dejar vacío si APP_PASSWORD no está configurado"
             />
           </div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
