@@ -1,0 +1,20 @@
+# Configuración de Nixpacks para Railway
+# Esto permite ejecutar comandos durante el build
+
+[phases.setup]
+nixPkgs = ["nodejs-20_x", "pnpm"]
+
+[phases.install]
+cmds = [
+  "pnpm install --frozen-lockfile",
+  "pnpm prisma generate"
+]
+
+[phases.build]
+cmds = [
+  "pnpm prisma migrate deploy || true",
+  "pnpm build"
+]
+
+[start]
+cmd = "pnpm start"
