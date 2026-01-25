@@ -12,9 +12,11 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "pnpm prisma migrate deploy || true",
   "pnpm build"
 ]
+
+# Nota: Las migraciones NO se ejecutan en build por seguridad
+# Ejecútalas manualmente en Railway Query o con Railway CLI
 
 [start]
 cmd = "pnpm start"
