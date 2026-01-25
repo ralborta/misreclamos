@@ -15,8 +15,7 @@ cmds = [
   "pnpm build"
 ]
 
-# Nota: Las migraciones NO se ejecutan en build por seguridad
-# Ejecútalas manualmente en Railway Query o con Railway CLI
-
 [start]
-cmd = "pnpm start"
+# Ejecutar migraciones antes de iniciar la app
+# Prisma migrate deploy es idempotente (solo aplica lo que falta)
+cmd = "pnpm prisma migrate deploy && pnpm start"
