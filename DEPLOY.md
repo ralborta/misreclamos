@@ -20,14 +20,23 @@
 
 ### Aplicar Migraciones
 
-**Opción A: Desde Railway Dashboard**
+**Opción A: Desde Railway Dashboard (Recomendado)**
 1. Ve a tu base de datos en Railway
 2. Click en **"Query"** tab
-3. Copia y pega el contenido de `prisma/migrations/20251226145518_init/migration.sql`
-4. Ejecuta la query
-5. Repite con las demás migraciones en orden
+3. Copia y pega TODO el contenido del archivo `scripts/apply-migrations.sql`
+4. Ejecuta la query (esto aplicará todas las migraciones de una vez)
+5. Verifica que no haya errores
 
-**Opción B: Desde Railway CLI**
+**Opción B: Migraciones Individuales**
+Si prefieres aplicar una por una, ejecuta en orden:
+1. `prisma/migrations/20251226145518_init/migration.sql`
+2. `prisma/migrations/20251229115247_add_ai_summary_fields/migration.sql`
+3. `prisma/migrations/20251229191953_add_phone_to_agent_user/migration.sql`
+4. `prisma/migrations/20251229193218_add_contact_name_to_ticket/migration.sql`
+5. `prisma/migrations/20251229201441_add_attachments_to_ticket_message/migration.sql`
+6. `prisma/migrations/20250130000000_add_legal_fields/migration.sql`
+
+**Opción C: Desde Railway CLI**
 ```bash
 # Instalar Railway CLI (si no lo tienes)
 npm i -g @railway/cli
@@ -40,6 +49,12 @@ railway link
 
 # Aplicar migraciones
 railway run pnpm prisma migrate deploy
+```
+
+**Verificar que la DB está creada:**
+```bash
+# Localmente (con DATABASE_URL configurado)
+npx tsx scripts/check-db.ts
 ```
 
 ### Módulos en Railway
