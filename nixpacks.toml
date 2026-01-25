@@ -16,6 +16,6 @@ cmds = [
 ]
 
 [start]
-# Ejecutar migraciones antes de iniciar la app
-# Prisma migrate deploy es idempotente (solo aplica lo que falta)
-cmd = "pnpm prisma migrate deploy && pnpm start"
+# Solo iniciar la app
+# Las migraciones se ejecutan en preDeployCommand (solo en deploys, no en restarts)
+cmd = "pnpm start"

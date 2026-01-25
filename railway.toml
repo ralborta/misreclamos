@@ -1,5 +1,5 @@
 # Railway configuration
-# Este archivo permite configurar el comportamiento de Railway
+# Usar preDeployCommand es mejor práctica que startCommand para migraciones
 
 [build]
 builder = "nixpacks"
@@ -9,5 +9,7 @@ startCommand = "pnpm start"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# Ejecutar migraciones antes del start (opcional)
-# Railway puede ejecutar esto si configuras un servicio separado
+# preDeployCommand se ejecuta SOLO durante deploys, no en restarts
+# Esto evita ejecutar migraciones en cada restart del contenedor
+[deploy.preDeployCommand]
+command = "pnpm prisma migrate deploy"
