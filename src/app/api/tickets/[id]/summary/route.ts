@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
-import { summarizeConversation, classifyLegalType } from "@/lib/openai";
+import { summarizeConversation, classifyLegalType, inferPriorityFromConversation } from "@/lib/openai";
 
 /**
  * POST /api/tickets/[id]/summary
@@ -65,18 +65,32 @@ export async function POST(
 
     console.log(`[Summary] ✅ Resumen generado para reclamo ${ticket.code}`);
 
-    // Clasificar o reclasificar tipo de caso con IA a partir de la conversación
+    // Clasificar tipo de caso y prioridad con IA
     let legalType: string | null = ticket.legalType;
+    let priority = ticket.priority;
+
     if (process.env.OPENAI_API_KEY) {
-      const classified = await classifyLegalType(conversationMessages);
+      const [classified, inferredPriority] = await Promise.all([
+        classifyLegalType(conversationMessages),
+        inferPriorityFromConversation(conversationMessages),
+      ]);
+
       if (classified) {
-        await prisma.ticket.update({
-          where: { id },
-          data: { legalType: classified },
-        });
         legalType = classified;
         console.log(`[Summary] ✅ Tipo de caso ${ticket.legalType ? "reclasificado" : "asignado"}: ${classified}`);
       }
+      if (inferredPriority) {
+        priority = inferredPriority;
+        console.log(`[Summary] ✅ Prioridad actualizada: ${inferredPriority}`);
+      }
+
+      await prisma.ticket.update({
+        where: { id },
+        data: {
+          ...(legalType && { legalType }),
+          ...(inferredPriority && { priority: inferredPriority }),
+        },
+      });
     }
 
     return NextResponse.json({
@@ -84,6 +98,7 @@ export async function POST(
       aiSummary,
       messagesCount: ticket.messages.length,
       legalType: legalType ?? undefined,
+      priority,
     });
   } catch (error: any) {
     console.error("[Summary] Error:", error);

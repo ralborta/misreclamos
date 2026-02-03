@@ -195,3 +195,64 @@ Tipo de caso (respuesta exacta de la lista):`;
     return null;
   }
 }
+
+export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+
+const PRIORITY_OPTIONS: TicketPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+
+/**
+ * Infiere la prioridad del caso a partir de la conversación (urgencia, impacto, etc.).
+ */
+export async function inferPriorityFromConversation(
+  messages: ConversationMessage[]
+): Promise<TicketPriority | null> {
+  if (!process.env.OPENAI_API_KEY || messages.length === 0) {
+    return null;
+  }
+
+  const conversationText = messages
+    .map((msg) => `[${msg.from}]: ${msg.text}`)
+    .join('\n');
+
+  const prompt = `Eres un asistente jurídico. Determina la prioridad de este caso según la urgencia y el contenido. Responde SOLO una de estas palabras: LOW, NORMAL, HIGH, URGENT.
+
+Criterios:
+- URGENT: amenazas, plazos legales inminentes, despidos sin pago, situaciones críticas.
+- HIGH: despidos, accidentes, impagos, temas que requieren atención pronto.
+- NORMAL: consultas estándar, trámites sin urgencia.
+- LOW: consultas informativas, temas que pueden esperar.
+
+Conversación:
+${conversationText}
+
+Prioridad (solo una palabra: LOW, NORMAL, HIGH o URGENT):`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Clasificas prioridad de casos legales. Respondes solo: LOW, NORMAL, HIGH o URGENT.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 20,
+    });
+
+    const raw = (response.choices[0]?.message?.content?.trim() || '').toUpperCase();
+    const found = PRIORITY_OPTIONS.find((p) => raw === p || raw.startsWith(p));
+    if (found) {
+      console.log('[OpenAI] Prioridad inferida:', found);
+      return found;
+    }
+    return null;
+  } catch (error: any) {
+    console.error('[OpenAI] Error al inferir prioridad:', error.message);
+    return null;
+  }
+}
