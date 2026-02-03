@@ -274,7 +274,7 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   const updateData: {
     priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
     category?: "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO";
-    status: string;
+    status: "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
     lastMessageAt: Date;
   } = {
     status: shouldEscalate ? "IN_PROGRESS" : ticket.status,
