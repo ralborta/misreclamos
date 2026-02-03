@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Props = {
   customerId: string;
@@ -10,6 +10,11 @@ type Props = {
 export function BotPausedToggle({ customerId, initialPaused }: Props) {
   const [paused, setPaused] = useState(initialPaused);
   const [loading, setLoading] = useState(false);
+
+  // Sincronizar con el valor del servidor (p. ej. después de router.refresh())
+  useEffect(() => {
+    setPaused(initialPaused);
+  }, [initialPaused]);
 
   const toggle = async () => {
     setLoading(true);
