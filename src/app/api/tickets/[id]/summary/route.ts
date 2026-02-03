@@ -77,11 +77,13 @@ export async function POST(
     }
 
     // Una sola escritura a la DB con todo para que persista bien
-    const updateData: { aiSummary: string; legalType?: string | null; priority?: string } = {
-      aiSummary,
-    };
+    const updateData: {
+      aiSummary: string;
+      legalType?: string | null;
+      priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+    } = { aiSummary };
     if (legalType != null) updateData.legalType = legalType;
-    if (priority != null) updateData.priority = priority as "LOW" | "NORMAL" | "HIGH" | "URGENT";
+    if (priority != null) updateData.priority = priority;
 
     const updated = await prisma.ticket.update({
       where: { id },
