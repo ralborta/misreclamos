@@ -4,7 +4,7 @@ import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
-import { setBotBlacklist } from "@/lib/builderbot";
+import { setBuilderBotCloudBlacklist, setBotBlacklist } from "@/lib/builderbot";
 
 const updateCustomerSchema = z.object({
   phone: z.string().min(5).optional(),
@@ -82,9 +82,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     });
 
-    // Sincronizar con blacklist del bot self-hosted (si está configurado)
+    // Sincronizar blacklist: BuilderBot Cloud (api/v2) y opcional self-hosted
     if (botPaused !== undefined && customer.phone) {
-      setBotBlacklist(customer.phone, botPaused ? "add" : "remove").catch(() => {});
+      const intent = botPaused ? "add" : "remove";
+      setBuilderBotCloudBlacklist(customer.phone, intent).catch(() => {});
+      setBotBlacklist(customer.phone, intent).catch(() => {});
     }
 
     return NextResponse.json({ customer });

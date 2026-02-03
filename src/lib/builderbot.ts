@@ -67,6 +67,41 @@ export async function sendWhatsAppMessage(options: SendWhatsAppOptions) {
   }
 }
 
+/**
+ * Pausa o reactiva el bot para un número vía BuilderBot Cloud API v2.
+ * POST /api/v2/{botId}/blacklist con { number, intent: "add" | "remove" }.
+ * Usa BUILDERBOT_BOT_ID y BUILDERBOT_API_KEY (los mismos que para enviar mensajes).
+ * No lanza: si falla, solo se registra en consola.
+ */
+export async function setBuilderBotCloudBlacklist(
+  number: string,
+  intent: 'add' | 'remove'
+): Promise<void> {
+  const BOT_ID = process.env.BUILDERBOT_BOT_ID || '';
+  const API_KEY = process.env.BUILDERBOT_API_KEY || '';
+  if (!BOT_ID || !API_KEY) return;
+
+  const normalizedNumber = String(number).replace(/\D/g, '');
+  if (normalizedNumber.length < 9) return;
+
+  const url = `${BUILDERBOT_BASE_URL.replace(/\/$/, '')}/api/v2/${BOT_ID}/blacklist`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-builderbot': API_KEY,
+  };
+
+  try {
+    const response = await axios.post(
+      url,
+      { number: normalizedNumber, intent },
+      { headers, timeout: 10000 }
+    );
+    console.log('[BuilderBot] Cloud blacklist', intent, normalizedNumber, response.data);
+  } catch (error: any) {
+    console.error('[BuilderBot] Error Cloud blacklist', intent, error?.message);
+  }
+}
+
 /** URL del bot self-hosted que expone /v1/blacklist (opcional) */
 const BUILDERBOT_BOT_URL = process.env.BUILDERBOT_BOT_URL || '';
 const BUILDERBOT_DASHBOARD_TOKEN = process.env.BUILDERBOT_DASHBOARD_TOKEN || '';
@@ -99,8 +134,8 @@ export async function setBotBlacklist(
       { number: normalizedNumber, intent },
       { headers, timeout: 10000 }
     );
-    console.log('[BuilderBot] Blacklist', intent, normalizedNumber, response.data);
+    console.log('[BuilderBot] Blacklist self-hosted', intent, normalizedNumber, response.data);
   } catch (error: any) {
-    console.error('[BuilderBot] Error blacklist', intent, error?.message);
+    console.error('[BuilderBot] Error blacklist self-hosted', intent, error?.message);
   }
 }
