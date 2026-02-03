@@ -14,6 +14,7 @@ import { ConversationSummary } from "@/components/tickets/ConversationSummary";
 import { AssignAgentDropdown } from "@/components/tickets/AssignAgentDropdown";
 import { MessageAttachments } from "@/components/tickets/MessageAttachments";
 import { TicketLiveRefresh } from "@/components/tickets/TicketLiveRefresh";
+import { LegalTypeDropdown } from "@/components/tickets/LegalTypeDropdown";
 
 export default async function TicketDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireSession();
@@ -135,6 +136,9 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                 <div><span className="font-semibold">Nombre:</span> {ticket.customer?.name || "No especificado"}</div>
                 <div><span className="font-semibold">Teléfono:</span> {ticket.customer?.phone}</div>
               </div>
+            </div>
+            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+              <LegalTypeDropdown ticketId={ticket.id} currentLegalType={ticket.legalType} />
             </div>
             <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
               <AssignAgentDropdown 
