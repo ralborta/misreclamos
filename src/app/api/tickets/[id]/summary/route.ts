@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
-import { summarizeConversation } from "@/lib/openai";
+import { summarizeConversation, classifyLegalType } from "@/lib/openai";
 
 /**
  * POST /api/tickets/[id]/summary
@@ -65,10 +65,25 @@ export async function POST(
 
     console.log(`[Summary] ✅ Resumen generado para reclamo ${ticket.code}`);
 
+    // Clasificar o reclasificar tipo de caso con IA a partir de la conversación
+    let legalType: string | null = ticket.legalType;
+    if (process.env.OPENAI_API_KEY) {
+      const classified = await classifyLegalType(conversationMessages);
+      if (classified) {
+        await prisma.ticket.update({
+          where: { id },
+          data: { legalType: classified },
+        });
+        legalType = classified;
+        console.log(`[Summary] ✅ Tipo de caso ${ticket.legalType ? "reclasificado" : "asignado"}: ${classified}`);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       aiSummary,
       messagesCount: ticket.messages.length,
+      legalType: legalType ?? undefined,
     });
   } catch (error: any) {
     console.error("[Summary] Error:", error);

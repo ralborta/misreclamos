@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ConversationSummaryProps {
   ticketId: string;
@@ -8,6 +9,7 @@ interface ConversationSummaryProps {
 }
 
 export function ConversationSummary({ ticketId, initialSummary }: ConversationSummaryProps) {
+  const router = useRouter();
   const [summary, setSummary] = useState(initialSummary || null);
   const [loading, setLoading] = useState(false);
 
@@ -25,6 +27,8 @@ export function ConversationSummary({ ticketId, initialSummary }: ConversationSu
       if (res.ok) {
         const data = await res.json();
         setSummary(data.aiSummary);
+        // Si además se clasificó el tipo de caso, refrescar para verlo en el selector
+        if (data.legalType) router.refresh();
       }
     } catch (error) {
       console.error("Error al actualizar resumen:", error);
