@@ -67,11 +67,16 @@ export async function sendWhatsAppMessage(options: SendWhatsAppOptions) {
   }
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+const BLACKLIST_RETRIES = 3;
+const BLACKLIST_DELAY_MS = 1500;
+const BLACKLIST_SETTLE_MS = 800;
+
 /**
  * Pausa o reactiva el bot para un número vía BuilderBot Cloud API v2.
  * POST /api/v2/{botId}/blacklist con { number, intent: "add" | "remove" }.
- * Usa BUILDERBOT_BOT_ID y BUILDERBOT_API_KEY (los mismos que para enviar mensajes).
- * No lanza: si falla, solo se registra en consola.
+ * Reintenta hasta BLACKLIST_RETRIES veces y espera BLACKLIST_SETTLE_MS tras éxito.
  */
 export async function setBuilderBotCloudBlacklist(
   number: string,
@@ -89,23 +94,26 @@ export async function setBuilderBotCloudBlacklist(
     'Content-Type': 'application/json',
     'x-api-builderbot': API_KEY,
   };
+  const body = { number: normalizedNumber, intent };
 
-  try {
-    const response = await axios.post(
-      url,
-      { number: normalizedNumber, intent },
-      { headers, timeout: 10000 }
-    );
-    console.log('[BuilderBot] Cloud blacklist OK', intent, normalizedNumber, response.data);
-  } catch (error: any) {
-    const status = error.response?.status;
-    const data = error.response?.data;
-    console.error('[BuilderBot] Error Cloud blacklist', intent, normalizedNumber, {
-      status,
-      data,
-      message: error?.message,
-    });
+  let lastError: any = null;
+  for (let attempt = 1; attempt <= BLACKLIST_RETRIES; attempt++) {
+    try {
+      const response = await axios.post(url, body, { headers, timeout: 15000 });
+      console.log('[BuilderBot] Cloud blacklist OK', intent, normalizedNumber, response.data);
+      await sleep(BLACKLIST_SETTLE_MS);
+      return;
+    } catch (error: any) {
+      lastError = error;
+      const status = error.response?.status;
+      const data = error.response?.data;
+      console.error(`[BuilderBot] Cloud blacklist attempt ${attempt}/${BLACKLIST_RETRIES}`, intent, normalizedNumber, { status, data, message: error?.message });
+      if (attempt < BLACKLIST_RETRIES) {
+        await sleep(BLACKLIST_DELAY_MS);
+      }
+    }
   }
+  console.error('[BuilderBot] Cloud blacklist falló tras reintentos', intent, normalizedNumber, lastError?.response?.data ?? lastError?.message);
 }
 
 /** URL del bot self-hosted que expone /v1/blacklist (opcional) */
