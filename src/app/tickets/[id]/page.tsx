@@ -13,6 +13,7 @@ import { StatusActions } from "@/components/tickets/StatusActions";
 import { ConversationSummary } from "@/components/tickets/ConversationSummary";
 import { AssignAgentDropdown } from "@/components/tickets/AssignAgentDropdown";
 import { MessageAttachments } from "@/components/tickets/MessageAttachments";
+import { TicketLiveRefresh } from "@/components/tickets/TicketLiveRefresh";
 
 export default async function TicketDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireSession();
@@ -50,6 +51,7 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
 
   return (
     <div className="min-h-screen p-6">
+      <TicketLiveRefresh />
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
