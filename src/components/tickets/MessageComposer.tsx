@@ -11,7 +11,6 @@ type Props = {
 };
 
 export function MessageComposer({ ticketId, customerId, botPaused = false }: Props) {
-  const router = useRouter();
   const [text, setText] = useState("");
   const [direction, setDirection] = useState<MessageDirection>("OUTBOUND");
   const [loading, setLoading] = useState(false);
