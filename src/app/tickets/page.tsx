@@ -3,6 +3,8 @@ import { requireSession } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { TicketsTable } from "@/components/tickets/TicketsTable";
 
+export const dynamic = "force-dynamic";
+
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
 type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
