@@ -96,9 +96,15 @@ export async function setBuilderBotCloudBlacklist(
       { number: normalizedNumber, intent },
       { headers, timeout: 10000 }
     );
-    console.log('[BuilderBot] Cloud blacklist', intent, normalizedNumber, response.data);
+    console.log('[BuilderBot] Cloud blacklist OK', intent, normalizedNumber, response.data);
   } catch (error: any) {
-    console.error('[BuilderBot] Error Cloud blacklist', intent, error?.message);
+    const status = error.response?.status;
+    const data = error.response?.data;
+    console.error('[BuilderBot] Error Cloud blacklist', intent, normalizedNumber, {
+      status,
+      data,
+      message: error?.message,
+    });
   }
 }
 

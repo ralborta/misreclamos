@@ -83,10 +83,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     // Sincronizar blacklist: BuilderBot Cloud (api/v2) y opcional self-hosted
+    // Importante: await para que en serverless (Vercel) la llamada termine antes de responder
     if (botPaused !== undefined && customer.phone) {
       const intent = botPaused ? "add" : "remove";
-      setBuilderBotCloudBlacklist(customer.phone, intent).catch(() => {});
-      setBotBlacklist(customer.phone, intent).catch(() => {});
+      await setBuilderBotCloudBlacklist(customer.phone, intent).catch((err) => {
+        console.error("[Clientes] Blacklist Cloud:", err?.message ?? err);
+      });
+      await setBotBlacklist(customer.phone, intent).catch((err) => {
+        console.error("[Clientes] Blacklist self-hosted:", err?.message ?? err);
+      });
     }
 
     return NextResponse.json({ customer });
