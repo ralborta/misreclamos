@@ -9,7 +9,7 @@
  */
 
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
 import * as XLSX from "xlsx";
 import * as fs from "fs";
 import * as path from "path";
@@ -63,7 +63,7 @@ async function main() {
       const data = normalizeRow(row);
       await prisma.legado.create({
         data: {
-          data,
+          data: data as Prisma.InputJsonValue,
           source: sourceName,
         },
       });
