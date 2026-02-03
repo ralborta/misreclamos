@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ticketTypeConfig } from "@/lib/tickets";
 
 type Props = {
@@ -9,8 +10,14 @@ type Props = {
 };
 
 export function LegalTypeDropdown({ ticketId, currentLegalType }: Props) {
+  const router = useRouter();
   const [value, setValue] = useState(currentLegalType ?? "");
   const [loading, setLoading] = useState(false);
+  const [classifyLoading, setClassifyLoading] = useState(false);
+
+  useEffect(() => {
+    setValue(currentLegalType ?? "");
+  }, [currentLegalType]);
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value || null;
@@ -29,24 +36,55 @@ export function LegalTypeDropdown({ ticketId, currentLegalType }: Props) {
     }
   };
 
+  const handleClassifyWithAI = async () => {
+    setClassifyLoading(true);
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}/classify-type`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.legalType) {
+        setValue(data.legalType);
+        router.refresh();
+      } else if (!res.ok) {
+        console.error(data.error || "Error al clasificar");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setClassifyLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         Tipo de caso
       </label>
-      <select
-        value={value}
-        onChange={handleChange}
-        disabled={loading}
-        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
-      >
-        <option value="">Sin asignar</option>
-        {ticketTypeConfig.map((t) => (
-          <option key={t.slug} value={t.legalType}>
-            {t.label}
-          </option>
-        ))}
-      </select>
+      <div className="flex gap-2">
+        <select
+          value={value}
+          onChange={handleChange}
+          disabled={loading}
+          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
+        >
+          <option value="">Sin asignar</option>
+          {ticketTypeConfig.map((t) => (
+            <option key={t.slug} value={t.legalType}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={handleClassifyWithAI}
+          disabled={classifyLoading}
+          className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+          title="Clasificar según la conversación con IA"
+        >
+          {classifyLoading ? "..." : "IA"}
+        </button>
+      </div>
     </div>
   );
 }

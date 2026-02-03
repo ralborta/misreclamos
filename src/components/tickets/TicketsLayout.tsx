@@ -57,6 +57,7 @@ function ReclamosSidebar() {
         <NavLink label="Sucesiones" href="/tickets/sucesiones" indicator="bg-violet-500" />
         <NavLink label="Amparo de salud" href="/tickets/amparo-de-salud" indicator="bg-emerald-500" />
         <NavLink label="Reclamos comerciales" href="/tickets/reclamos-comerciales" indicator="bg-slate-500" />
+        <NavLink label="Sin caso" href="/tickets/sin-caso" indicator="bg-slate-400" />
         
         <SectionTitle>Gestión</SectionTitle>
         <NavLink label="Abogados" href="/agentes" />

@@ -124,3 +124,74 @@ Conclusión:`;
       : 'Escalado a soporte humano';
   }
 }
+
+/** Valores válidos de tipo de caso (debe coincidir con ticketTypeConfig en lib/tickets) */
+export const LEGAL_TYPE_OPTIONS = [
+  'Accidente de tránsito',
+  'Trabajo',
+  'Accidente de trabajo',
+  'Sucesiones',
+  'Amparo de salud',
+  'Reclamos comerciales',
+  'Sin caso',
+] as const;
+
+/**
+ * Clasifica la conversación en uno de los tipos de caso legales.
+ * Devuelve exactamente uno de LEGAL_TYPE_OPTIONS o null si no se puede determinar.
+ */
+export async function classifyLegalType(
+  messages: ConversationMessage[]
+): Promise<typeof LEGAL_TYPE_OPTIONS[number] | null> {
+  if (!process.env.OPENAI_API_KEY || messages.length === 0) {
+    return null;
+  }
+
+  const conversationText = messages
+    .map((msg) => `[${msg.from}]: ${msg.text}`)
+    .join('\n');
+
+  const optionsList = LEGAL_TYPE_OPTIONS.join('\n- ');
+
+  const prompt = `Eres un asistente jurídico. Clasifica esta conversación de un bufete legal en UNO SOLO de los siguientes tipos. Responde ÚNICAMENTE con la frase exacta de la lista, sin puntos ni explicación.
+Usa "Sin caso" cuando sea consulta general, error, spam, número equivocado o no corresponda a un caso legal.
+
+Tipos permitidos:
+- ${optionsList}
+
+Conversación:
+${conversationText}
+
+Tipo de caso (respuesta exacta de la lista):`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Clasificas conversaciones legales en una categoría. Respondes solo con la categoría exacta de la lista dada.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 50,
+    });
+
+    const raw = response.choices[0]?.message?.content?.trim() || '';
+    const normalized = raw.replace(/^[-.]\s*/, '').trim();
+    const found = LEGAL_TYPE_OPTIONS.find((opt) => opt === normalized || normalized.includes(opt));
+    if (found) {
+      console.log('[OpenAI] Tipo de caso clasificado:', found);
+      return found;
+    }
+    console.log('[OpenAI] Clasificación sin match:', raw);
+    return null;
+  } catch (error: any) {
+    console.error('[OpenAI] Error al clasificar tipo:', error.message);
+    return null;
+  }
+}

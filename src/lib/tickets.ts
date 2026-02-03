@@ -65,4 +65,5 @@ export const ticketTypeConfig = [
   { slug: "sucesiones", label: "Sucesiones", legalType: "Sucesiones" },
   { slug: "amparo-de-salud", label: "Amparo de salud", legalType: "Amparo de salud" },
   { slug: "reclamos-comerciales", label: "Reclamos comerciales", legalType: "Reclamos comerciales" },
+  { slug: "sin-caso", label: "Sin caso", legalType: "Sin caso" },
 ] as const;

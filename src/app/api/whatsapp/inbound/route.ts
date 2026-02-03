@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { generateTicketCode } from "@/lib/tickets";
 import { uploadToBlob, getFileExtension } from "@/lib/blob";
-import { summarizeConversation } from "@/lib/openai";
+import { summarizeConversation, classifyLegalType } from "@/lib/openai";
 // Using string literals instead of Prisma enums for compatibility
 
 // Schema para el formato de BuilderBot.cloud
@@ -45,6 +45,33 @@ async function updateTicketSummary(ticketId: string) {
     console.log("[Inbound] ✅ Resumen actualizado para ticket", ticketId);
   } catch (error: any) {
     console.error("[Inbound] ⚠️ Error al actualizar resumen:", error?.message);
+  }
+}
+
+/** Clasifica el tipo de caso con IA solo si el ticket aún no tiene legalType. */
+async function classifyTicketTypeIfEmpty(ticketId: string) {
+  try {
+    if (!process.env.OPENAI_API_KEY) return;
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      include: { messages: { orderBy: { createdAt: "asc" } } },
+    });
+    if (!ticket || ticket.legalType || ticket.messages.length === 0) return;
+    const conversationMessages = ticket.messages.map((m) => ({
+      from: m.from,
+      text: m.text,
+      createdAt: m.createdAt,
+    }));
+    const legalType = await classifyLegalType(conversationMessages);
+    if (legalType) {
+      await prisma.ticket.update({
+        where: { id: ticketId },
+        data: { legalType },
+      });
+      console.log("[Inbound] ✅ Tipo de caso asignado:", legalType);
+    }
+  } catch (error: any) {
+    console.error("[Inbound] ⚠️ Error al clasificar tipo:", error?.message);
   }
 }
 
@@ -309,6 +336,7 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
 
   // Generar/actualizar resumen de la conversación con IA
   await updateTicketSummary(ticket.id);
+  await classifyTicketTypeIfEmpty(ticket.id);
 
   return NextResponse.json({ 
     ok: true, 
@@ -464,6 +492,7 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
 
   // Generar/actualizar resumen de la conversación con IA
   await updateTicketSummary(ticket.id);
+  await classifyTicketTypeIfEmpty(ticket.id);
 
   console.log(`✅ Mensaje saliente del abogado guardado en reclamo ${ticket.code}`);
 
