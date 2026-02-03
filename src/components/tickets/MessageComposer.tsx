@@ -1,10 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { MessageDirection, MessageFrom } from "@/lib/types";
+import { BotPausedToggle } from "./BotPausedToggle";
 
-export function MessageComposer({ ticketId }: { ticketId: string }) {
+type Props = {
+  ticketId: string;
+  customerId?: string | null;
+  botPaused?: boolean;
+};
+
+export function MessageComposer({ ticketId, customerId, botPaused = false }: Props) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [direction, setDirection] = useState<MessageDirection>("OUTBOUND");
@@ -62,7 +68,12 @@ export function MessageComposer({ ticketId }: { ticketId: string }) {
         onChange={(e) => setText(e.target.value)}
       />
       {error ? <p className="text-xs text-red-600">{error}</p> : null}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {customerId ? (
+            <BotPausedToggle customerId={customerId} initialPaused={botPaused} />
+          ) : null}
+        </div>
         <button
           type="submit"
           disabled={loading}
