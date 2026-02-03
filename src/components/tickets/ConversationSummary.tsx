@@ -27,8 +27,8 @@ export function ConversationSummary({ ticketId, initialSummary }: ConversationSu
       if (res.ok) {
         const data = await res.json();
         setSummary(data.aiSummary);
-        // Si además se clasificó el tipo de caso, refrescar para verlo en el selector
-        if (data.legalType) router.refresh();
+        // Refrescar siempre para que se actualicen tipo de caso y todo el ticket
+        router.refresh();
       }
     } catch (error) {
       console.error("Error al actualizar resumen:", error);
