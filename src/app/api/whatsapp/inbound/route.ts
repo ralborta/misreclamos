@@ -270,14 +270,23 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     });
   }
 
+  // Solo actualizar prioridad y categoría en tickets NUEVOS; en existentes no pisar lo que definió la IA o el usuario
+  const updateData: {
+    priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+    category?: "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO";
+    status: string;
+    lastMessageAt: Date;
+  } = {
+    status: shouldEscalate ? "IN_PROGRESS" : ticket.status,
+    lastMessageAt: new Date(),
+  };
+  if (isNewTicket) {
+    updateData.priority = heuristics.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT";
+    updateData.category = heuristics.category as "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO";
+  }
   await prisma.ticket.update({
     where: { id: ticket.id },
-    data: {
-      priority: heuristics.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
-      category: heuristics.category as "LABORAL" | "CIVIL" | "COMERCIAL" | "PENAL" | "FAMILIA" | "ADMINISTRATIVO" | "TRIBUTARIO" | "PREVISIONAL" | "OTRO",
-      status: shouldEscalate ? "IN_PROGRESS" : ticket.status,
-      lastMessageAt: new Date(),
-    },
+    data: updateData,
   });
 
   await prisma.ticketEvent.create({
