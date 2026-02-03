@@ -182,3 +182,27 @@ model TicketTag {
 
   @@id([ticketId, tagId])
 }
+
+// Registros históricos importados desde Excel (carga única / legado)
+model Legado {
+  id        String   @id @default(cuid())
+  data      Json     // Fila completa del Excel (todas las columnas)
+  source    String?  // Nombre del archivo origen (ej: "reclamos-2024.xlsx")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Tipos de caso (ex prioridades/tipos): altas, bajas y modificaciones desde la UI
+model CaseType {
+  id        String   @id @default(cuid())
+  slug      String   @unique // para URL: accidente-transito
+  label     String   // etiqueta en UI: "Accidente de tránsito"
+  legalType String   // valor en Ticket.legalType (debe coincidir)
+  color     String   @default("slate-500") // clase Tailwind para el indicador (ej: amber-500)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}

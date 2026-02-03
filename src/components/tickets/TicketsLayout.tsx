@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { CaseTypesNavLinks } from "@/components/casos/CaseTypesNavLinks";
 
 export function TicketsLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -51,15 +52,10 @@ function ReclamosSidebar() {
         <NavLink label="Cerrados" href="/tickets/cerrados" />
         
         <SectionTitle>Por tipo de caso</SectionTitle>
-        <NavLink label="Accidente de tránsito" href="/tickets/accidente-transito" indicator="bg-amber-500" />
-        <NavLink label="Trabajo" href="/tickets/trabajo" indicator="bg-blue-500" />
-        <NavLink label="Accidente de trabajo" href="/tickets/accidente-de-trabajo" indicator="bg-orange-500" />
-        <NavLink label="Sucesiones" href="/tickets/sucesiones" indicator="bg-violet-500" />
-        <NavLink label="Amparo de salud" href="/tickets/amparo-de-salud" indicator="bg-emerald-500" />
-        <NavLink label="Reclamos comerciales" href="/tickets/reclamos-comerciales" indicator="bg-slate-500" />
-        <NavLink label="Sin caso" href="/tickets/sin-caso" indicator="bg-slate-400" />
+        <CaseTypesNavLinks />
         
         <SectionTitle>Gestión</SectionTitle>
+        <NavLink label="Casos" href="/casos" />
         <NavLink label="Abogados" href="/agentes" />
         <NavLink label="Clientes" href="/clientes" />
         <NavLink label="Configuración" href="/configuracion" />

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ticketTypeConfig } from "@/lib/tickets";
+
+type CaseTypeOption = { id: string; label: string; legalType: string };
 
 type Props = {
   ticketId: string;
@@ -14,10 +15,18 @@ export function LegalTypeDropdown({ ticketId, currentLegalType }: Props) {
   const [value, setValue] = useState(currentLegalType ?? "");
   const [loading, setLoading] = useState(false);
   const [classifyLoading, setClassifyLoading] = useState(false);
+  const [options, setOptions] = useState<CaseTypeOption[]>([]);
 
   useEffect(() => {
     setValue(currentLegalType ?? "");
   }, [currentLegalType]);
+
+  useEffect(() => {
+    fetch("/api/casos")
+      .then((r) => r.json())
+      .then((data) => (data.casos ? setOptions(data.casos) : []))
+      .catch(() => {});
+  }, []);
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value || null;
@@ -69,8 +78,8 @@ export function LegalTypeDropdown({ ticketId, currentLegalType }: Props) {
           className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none disabled:opacity-50"
         >
           <option value="">Sin asignar</option>
-          {ticketTypeConfig.map((t) => (
-            <option key={t.slug} value={t.legalType}>
+          {options.map((t) => (
+            <option key={t.id} value={t.legalType}>
               {t.label}
             </option>
           ))}
