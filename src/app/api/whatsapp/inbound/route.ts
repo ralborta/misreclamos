@@ -266,17 +266,20 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     },
   });
 
-  // Decidir si enviar respuesta automática
+  // Decidir si enviar respuesta automática (no enviar si el bot está pausado para este cliente)
   let autoReplyMessage: string | null = null;
+  if (customer.botPausedAt) {
+    console.log(`⏸️ Cliente ${customerPhone} en pausa (bot pausado), no se envía auto-respuesta`);
+  } else {
+    // Verificar si el mensaje solicita contacto con agente de soporte
+    const messageLower = actualMessage.toLowerCase();
+    const solicitaAgente = /tenponder en contacto con un agente de soporte|poner en contacto con un agente|contactar con un agente|hablar con un agente|necesito hablar con un agente/i.test(messageLower);
 
-  // Verificar si el mensaje solicita contacto con agente de soporte
-  const messageLower = actualMessage.toLowerCase();
-  const solicitaAgente = /tenponder en contacto con un agente de soporte|poner en contacto con un agente|contactar con un agente|hablar con un agente|necesito hablar con un agente/i.test(messageLower);
-
-  if (shouldEscalate && solicitaAgente) {
-    autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Reclamo: *${ticket.code}*. Te responderemos pronto.`;
-  } else if (isNewTicket) {
-    autoReplyMessage = `Hola! Hemos recibido tu mensaje. Reclamo: *${ticket.code}*. Un abogado lo revisará pronto.`;
+    if (shouldEscalate && solicitaAgente) {
+      autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Reclamo: *${ticket.code}*. Te responderemos pronto.`;
+    } else if (isNewTicket) {
+      autoReplyMessage = `Hola! Hemos recibido tu mensaje. Reclamo: *${ticket.code}*. Un abogado lo revisará pronto.`;
+    }
   }
 
   // Enviar respuesta automática si corresponde

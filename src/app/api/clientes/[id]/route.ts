@@ -4,10 +4,13 @@ import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
+import { setBotBlacklist } from "@/lib/builderbot";
 
 const updateCustomerSchema = z.object({
   phone: z.string().min(5).optional(),
   name: z.string().optional(),
+  /** true = pausar bot para este cliente (agente responde manual), false = reactivar bot */
+  botPaused: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -55,7 +58,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Formato inválido", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { phone, name } = parsed.data;
+  const { phone, name, botPaused } = parsed.data;
 
   const updateData: any = {};
   if (phone !== undefined) {
@@ -63,6 +66,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
   if (name !== undefined) {
     updateData.name = name || null;
+  }
+  if (botPaused !== undefined) {
+    updateData.botPausedAt = botPaused ? new Date() : null;
   }
 
   try {
@@ -75,6 +81,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         },
       },
     });
+
+    // Sincronizar con blacklist del bot self-hosted (si está configurado)
+    if (botPaused !== undefined && customer.phone) {
+      setBotBlacklist(customer.phone, botPaused ? "add" : "remove").catch(() => {});
+    }
 
     return NextResponse.json({ customer });
   } catch (error: any) {

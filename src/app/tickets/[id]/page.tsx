@@ -13,6 +13,7 @@ import { StatusActions } from "@/components/tickets/StatusActions";
 import { ConversationSummary } from "@/components/tickets/ConversationSummary";
 import { AssignAgentDropdown } from "@/components/tickets/AssignAgentDropdown";
 import { MessageAttachments } from "@/components/tickets/MessageAttachments";
+import { BotPausedToggle } from "@/components/tickets/BotPausedToggle";
 
 export default async function TicketDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireSession();
@@ -128,6 +129,12 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
               <div className="space-y-2 text-sm text-slate-600">
                 <div><span className="font-semibold">Nombre:</span> {ticket.customer?.name || "No especificado"}</div>
                 <div><span className="font-semibold">Teléfono:</span> {ticket.customer?.phone}</div>
+                {ticket.customer && (
+                  <BotPausedToggle
+                    customerId={ticket.customer.id}
+                    initialPaused={!!ticket.customer.botPausedAt}
+                  />
+                )}
               </div>
             </div>
             <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">

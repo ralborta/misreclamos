@@ -71,6 +71,8 @@ model Customer {
   id          String   @id @default(cuid())
   phone       String   @unique
   name        String?
+  // Moderación: si está setado, el bot no envía auto-respuestas para este cliente (agente responde manual)
+  botPausedAt DateTime?
   // Información legal
   dni         String?  // DNI o CUIT/CUIL
   email       String?
