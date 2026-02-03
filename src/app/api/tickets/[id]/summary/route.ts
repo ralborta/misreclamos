@@ -57,15 +57,6 @@ export async function POST(
     // Generar resumen con IA
     const aiSummary = await summarizeConversation(conversationMessages);
 
-    // Actualizar el ticket con el nuevo resumen
-    await prisma.ticket.update({
-      where: { id },
-      data: { aiSummary },
-    });
-
-    console.log(`[Summary] ✅ Resumen generado para reclamo ${ticket.code}`);
-
-    // Clasificar tipo de caso y prioridad con IA
     let legalType: string | null = ticket.legalType;
     let priority = ticket.priority;
 
@@ -77,21 +68,27 @@ export async function POST(
 
       if (classified) {
         legalType = classified;
-        console.log(`[Summary] ✅ Tipo de caso ${ticket.legalType ? "reclasificado" : "asignado"}: ${classified}`);
+        console.log(`[Summary] Tipo de caso: ${classified}`);
       }
       if (inferredPriority) {
         priority = inferredPriority;
-        console.log(`[Summary] ✅ Prioridad actualizada: ${inferredPriority}`);
+        console.log(`[Summary] Prioridad: ${inferredPriority}`);
       }
-
-      await prisma.ticket.update({
-        where: { id },
-        data: {
-          ...(legalType && { legalType }),
-          ...(inferredPriority && { priority: inferredPriority }),
-        },
-      });
     }
+
+    // Una sola escritura a la DB con todo para que persista bien
+    const updateData: { aiSummary: string; legalType?: string | null; priority?: string } = {
+      aiSummary,
+    };
+    if (legalType != null) updateData.legalType = legalType;
+    if (priority != null) updateData.priority = priority as "LOW" | "NORMAL" | "HIGH" | "URGENT";
+
+    const updated = await prisma.ticket.update({
+      where: { id },
+      data: updateData,
+    });
+
+    console.log(`[Summary] ✅ DB actualizada: resumen, legalType=${updated.legalType}, priority=${updated.priority}`);
 
     return NextResponse.json({
       ok: true,
