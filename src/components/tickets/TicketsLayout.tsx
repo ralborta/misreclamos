@@ -55,6 +55,7 @@ function ReclamosSidebar() {
         <SectionTitle>Inicio</SectionTitle>
         <NavLink label="Dashboard" href="/dashboard" />
         <NavLink label="Todos los Casos" href="/tickets" />
+        <NavLink label="Legado" href="/legado" />
         
         <SectionTitle>Por Estado</SectionTitle>
         <NavLink label="Abiertos" href="/tickets/abiertos" />
