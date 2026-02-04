@@ -63,7 +63,7 @@ export function CaseTypesNavLinks() {
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${indicator} flex-shrink-0`} />
-            <span className="flex-1">{c.label}</span>
+            <span className="flex-1 min-w-0 break-words">{c.label}</span>
           </Link>
         );
       })}

@@ -5,11 +5,18 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { CaseTypesNavLinks } from "@/components/casos/CaseTypesNavLinks";
 
+const SIDEBAR_WIDTH = "17rem"; /* 272px - fijo para que no se ajuste */
+
 export function TicketsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-[#f3f8fd]">
+    <div className="min-h-screen bg-[#f3f8fd]">
       <ReclamosSidebar />
-      <main className="flex-1 p-6 lg:p-8 bg-white rounded-l-2xl shadow-sm">{children}</main>
+      <main
+        className="min-h-screen p-6 lg:p-8 bg-white rounded-l-2xl shadow-sm"
+        style={{ marginLeft: SIDEBAR_WIDTH }}
+      >
+        {children}
+      </main>
     </div>
   );
 }
@@ -24,9 +31,12 @@ function ReclamosSidebar() {
   };
 
   return (
-    <aside className="w-64 flex flex-col shadow-lg">
+    <aside
+      className="fixed left-0 top-0 bottom-0 z-30 flex flex-col shadow-lg min-w-[17rem] w-[17rem] flex-shrink-0"
+      style={{ width: SIDEBAR_WIDTH }}
+    >
       {/* Barra superior: logo más grande + nombre "Mis Reclamos" */}
-      <div className="bg-[#213b5c] px-4 py-5">
+      <div className="bg-[#213b5c] px-4 py-5 flex-shrink-0">
         <Link href="/tickets" className="flex flex-col items-center gap-2 hover:opacity-95 transition">
           <img
             src="/Logo-MisReclamos.png"
@@ -48,8 +58,8 @@ function ReclamosSidebar() {
         </Link>
       </div>
 
-      {/* Navegación: fondo claro, texto azul */}
-      <nav className="flex-1 space-y-1 px-3 py-5 text-sm overflow-y-auto bg-[#f3f8fd] border-r border-[#213b5c]/10">
+      {/* Navegación: fondo claro, texto azul - scroll solo en nav si hay muchas opciones */}
+      <nav className="flex-1 min-h-0 space-y-1 px-3 py-5 text-sm overflow-y-auto overflow-x-hidden bg-[#f3f8fd] border-r border-[#213b5c]/10">
         <SectionTitle>Inicio</SectionTitle>
         <NavLink label="Dashboard" href="/dashboard" />
         <NavLink label="Todos los Casos" href="/tickets" />
@@ -73,7 +83,7 @@ function ReclamosSidebar() {
       </nav>
 
       {/* Pie azul oscuro (estilo landing) */}
-      <div className="bg-[#213b5c] px-4 py-4">
+      <div className="bg-[#213b5c] px-4 py-4 flex-shrink-0">
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-colors"
@@ -117,8 +127,8 @@ function NavLink({
       {indicator && (
         <span className={`h-2 w-2 rounded-full ${indicator} flex-shrink-0`}></span>
       )}
-      {!indicator && <span className="w-2"></span>}
-      <span className="flex-1">{label}</span>
+      {!indicator && <span className="w-2 flex-shrink-0"></span>}
+      <span className="flex-1 min-w-0 break-words">{label}</span>
     </Link>
   );
 }
