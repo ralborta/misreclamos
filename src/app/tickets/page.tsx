@@ -20,6 +20,7 @@ export default async function TicketsPage() {
       contactName: true,
       status: true,
       priority: true,
+      legalType: true,
       lastMessageAt: true,
       createdAt: true,
       customer: {
