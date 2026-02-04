@@ -25,28 +25,26 @@ function ReclamosSidebar() {
 
   return (
     <aside className="w-64 flex flex-col shadow-lg">
-      {/* Barra superior: logo en public/ (Logo-MisReclamos.png o "Logo MisReclamos.png") */}
+      {/* Barra superior: logo más grande + nombre "Mis Reclamos" */}
       <div className="bg-[#213b5c] px-4 py-5">
-        <Link href="/tickets" className="flex flex-col gap-1 hover:opacity-95 transition">
+        <Link href="/tickets" className="flex flex-col items-center gap-2 hover:opacity-95 transition">
           <img
             src="/Logo-MisReclamos.png"
-            alt="MisReclamos"
-            className="h-10 w-auto object-contain object-left logo-img min-h-[40px]"
+            alt="Mis Reclamos"
+            className="h-16 w-auto max-w-[180px] object-contain logo-img min-h-[48px]"
             onError={(e) => {
               const el = e.target as HTMLImageElement;
               el.style.display = "none";
               el.nextElementSibling?.classList.remove("hidden");
             }}
           />
-          <div className="hidden logo-fallback flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded bg-white/10 text-[#f7941d] text-lg font-bold">
+          <div className="hidden logo-fallback flex items-center justify-center gap-2">
+            <span className="inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded bg-white/10 text-[#f7941d] text-2xl font-bold">
               ⚖
             </span>
-            <div>
-              <span className="text-base font-bold uppercase tracking-tight text-[#f7941d] block">MisReclamos</span>
-              <span className="text-xs text-white/90 font-normal">Tus derechos, tu abogado</span>
-            </div>
+            <span className="text-xs text-white/90 font-normal">Tus derechos, tu abogado</span>
           </div>
+          <span className="text-lg font-bold text-white tracking-tight">Mis Reclamos</span>
         </Link>
       </div>
 
