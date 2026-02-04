@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { statusLabels, priorityLabels } from "@/lib/tickets";
+import { statusLabels } from "@/lib/tickets";
 
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
-type TicketPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
 interface Ticket {
   id: string;
@@ -14,6 +13,7 @@ interface Ticket {
   contactName: string;
   status: string;
   priority: string;
+  legalType?: string | null;
   lastMessageAt: Date | string;
   createdAt: Date | string;
   customer?: {
@@ -36,19 +36,6 @@ function statusBadgeClass(status: TicketStatus) {
     case "RESOLVED":
       return "bg-emerald-100 text-emerald-800";
     case "CLOSED":
-      return "bg-slate-200 text-slate-700";
-  }
-}
-
-function priorityBadgeClass(priority: TicketPriority) {
-  switch (priority) {
-    case "URGENT":
-      return "bg-rose-100 text-rose-800";
-    case "HIGH":
-      return "bg-amber-100 text-amber-800";
-    case "NORMAL":
-      return "bg-emerald-100 text-emerald-800";
-    case "LOW":
       return "bg-slate-200 text-slate-700";
   }
 }
@@ -81,7 +68,7 @@ export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Asunto</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Cliente</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Estado</th>
-              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Prioridad</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Casos</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Asignado</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Última Actividad</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Creado</th>
@@ -134,10 +121,8 @@ export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold shadow-sm ${priorityBadgeClass(ticket.priority as TicketPriority)}`}
-                      >
-                        {priorityLabels[ticket.priority as TicketPriority]}
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-800">
+                        {ticket.legalType || "Sin caso"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
