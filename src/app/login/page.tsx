@@ -35,10 +35,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f3f8fd] px-4">
       <div className="w-full max-w-md">
-        {/* Logo: mismo archivo que el sidebar (public/logo.png) */}
+        {/* Logo: public/Logo-MisReclamos.png */}
         <div className="text-center mb-10">
           <img
-            src="/logo.png"
+            src="/Logo-MisReclamos.png"
             alt="MisReclamos"
             className="h-14 w-auto mx-auto object-contain mb-4 logo-img"
             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {

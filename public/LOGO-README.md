@@ -1,14 +1,13 @@
-# Dónde poner el logo
+# Logo MisReclamos
 
-Para que el logo de **MisReclamos** aparezca en la app (sidebar y pantalla de login):
+El logo se muestra en el sidebar y en la pantalla de login.
 
-1. Guardá tu archivo de logo en esta carpeta (`public/`) con uno de estos nombres:
-   - **`logo.png`** (recomendado)
-   - o **`logo.svg`**
+**Archivo:** guardá tu logo en esta carpeta (`public/`) con el nombre:
 
-2. Si usás **logo.svg**, avisá para cambiar la referencia en el código de `logo.png` a `logo.svg`,  
-   o renombrá tu archivo a `logo.png` (muchos editores permiten exportar PNG).
+- **`Logo-MisReclamos.png`**
 
-**Tamaño sugerido:** altura ~48–56 px (el sidebar lo muestra a 48px de alto). Ancho libre, se mantiene la proporción.
+**Ruta completa:** `public/Logo-MisReclamos.png`
 
-Si no hay archivo `logo.png` (ni `logo.svg`), se muestra el ícono ⚖ y el texto "MisReclamos" / "Tus derechos, tu abogado" como respaldo.
+**Tamaño sugerido:** altura ~48–56 px. Ancho libre, se mantiene la proporción.
+
+Si el archivo no existe, se muestra el ícono ⚖ y el texto "MisReclamos" / "Tus derechos, tu abogado" como respaldo.

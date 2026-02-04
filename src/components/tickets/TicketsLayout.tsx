@@ -25,11 +25,11 @@ function ReclamosSidebar() {
 
   return (
     <aside className="w-64 flex flex-col shadow-lg">
-      {/* Barra superior azul oscuro (estilo landing): logo en public/logo.png */}
+      {/* Barra superior: logo en public/Logo-MisReclamos.png */}
       <div className="bg-[#213b5c] px-4 py-5">
         <Link href="/tickets" className="flex flex-col gap-1 hover:opacity-95 transition">
           <img
-            src="/logo.png"
+            src="/Logo-MisReclamos.png"
             alt="MisReclamos"
             className="h-10 w-auto object-contain object-left logo-img"
             onError={(e) => {
