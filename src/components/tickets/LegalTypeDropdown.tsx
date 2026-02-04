@@ -37,7 +37,10 @@ export function LegalTypeDropdown({ ticketId, currentLegalType }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ legalType: newValue }),
       });
-      if (res.ok) setValue(newValue ?? "");
+      if (res.ok) {
+        setValue(newValue ?? "");
+        router.refresh();
+      }
     } catch (err) {
       console.error(err);
     } finally {

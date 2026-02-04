@@ -4,11 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-import {
-  priorityLabels,
-  statusLabels,
-  fromLabels,
-} from "@/lib/tickets";
+import { statusLabels, fromLabels } from "@/lib/tickets";
 type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED";
 import { MessageComposer } from "@/components/tickets/MessageComposer";
 import { StatusActions } from "@/components/tickets/StatusActions";
@@ -74,9 +70,9 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
               <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-800">
                 {statusLabels[ticket.status as TicketStatus]}
               </span>
-              <span className="text-sm font-semibold text-slate-700">Prioridad:</span>
+              <span className="text-sm font-semibold text-slate-700">Tipo de caso:</span>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-800">
-                {priorityLabels[ticket.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT"]}
+                {ticket.legalType || "Sin caso"}
               </span>
             </div>
             <StatusActions ticketId={ticket.id} currentStatus={ticket.status as TicketStatus} />

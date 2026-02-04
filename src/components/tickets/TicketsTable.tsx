@@ -68,7 +68,7 @@ export function TicketsTable({ tickets }: { tickets: Ticket[] }) {
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Asunto</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Cliente</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Estado</th>
-              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Casos</th>
+              <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Tipo de caso</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Asignado</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Última Actividad</th>
               <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Creado</th>
