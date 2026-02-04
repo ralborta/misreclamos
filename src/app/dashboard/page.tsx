@@ -326,30 +326,32 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Top Empresas */}
+          {/* Tipos de caso */}
           <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-2">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">
-              Top Empresas con más Casos
+              Casos por tipo
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              {stats.topCompanies.length === 0 ? (
+              {stats.ticketsByLegalType.length === 0 ? (
                 <p className="text-sm text-slate-500">No hay datos disponibles.</p>
               ) : (
-                stats.topCompanies.map((company: any, index: number) => (
+                stats.ticketsByLegalType.map((item: any, index: number) => (
                   <div
-                    key={company.id}
+                    key={item.legalType}
                     className="rounded-lg border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition-all"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold text-slate-500">{index + 1}</span>
                       <span className="text-xl font-bold text-slate-900">
-                        {company.totalTickets}
+                        {item.count}
                       </span>
                     </div>
                     <div className="text-sm font-medium text-slate-900 truncate">
-                      {company.name}
+                      {item.legalType}
                     </div>
-                    <div className="text-xs text-slate-500">{company.phone}</div>
+                    <div className="text-xs text-slate-500">
+                      {item.count} {item.count === 1 ? "caso" : "casos"}
+                    </div>
                   </div>
                 ))
               )}
