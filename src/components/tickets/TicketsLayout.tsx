@@ -7,9 +7,9 @@ import { CaseTypesNavLinks } from "@/components/casos/CaseTypesNavLinks";
 
 export function TicketsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-[#f3f8fd]">
       <ReclamosSidebar />
-      <main className="flex-1 p-6 lg:p-8 bg-white">{children}</main>
+      <main className="flex-1 p-6 lg:p-8 bg-white rounded-l-2xl shadow-sm">{children}</main>
     </div>
   );
 }
@@ -24,16 +24,28 @@ function ReclamosSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm">
-      {/* Header */}
-      <div className="px-6 py-6 border-b border-slate-200">
+    <aside className="w-64 bg-white border-r border-[#f7941d]/20 flex flex-col shadow-sm">
+      {/* Header: logo en public/logo.png (o public/logo.svg); si no existe se muestra el texto */}
+      <div className="px-6 py-6 border-b border-[#f7941d]/30">
         <Link href="/tickets" className="flex items-center gap-3 hover:opacity-90 transition">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-white text-xl font-bold shadow-sm">
-            ⚖
-          </div>
-          <div>
-            <span className="text-lg font-bold block text-slate-900">MisReclamos</span>
-            <span className="text-xs text-slate-500 font-normal">Bufete Legal</span>
+          <img
+            src="/logo.png"
+            alt="MisReclamos"
+            className="h-12 w-auto object-contain object-left logo-img"
+            onError={(e) => {
+              const el = e.target as HTMLImageElement;
+              el.style.display = "none";
+              el.nextElementSibling?.classList.remove("hidden");
+            }}
+          />
+          <div className="hidden logo-fallback flex items-center gap-3">
+            <div className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#213b5c] text-[#f7941d] text-xl font-bold shadow-sm">
+              ⚖
+            </div>
+            <div>
+              <span className="text-lg font-bold block text-[#213b5c]">MisReclamos</span>
+              <span className="text-xs text-[#213b5c]/70 font-normal">Tus derechos, tu abogado</span>
+            </div>
           </div>
         </Link>
       </div>
@@ -62,12 +74,12 @@ function ReclamosSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-4 border-t border-slate-200 bg-slate-50">
+      <div className="px-3 py-4 border-t border-[#f7941d]/20 bg-[#f3f8fd]">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[#213b5c] hover:bg-[#f7941d]/10 rounded-lg transition-colors"
         >
-          <span className="text-slate-500">Cerrar Sesión</span>
+          <span className="text-[#213b5c]/80">Cerrar Sesión</span>
         </button>
       </div>
     </aside>
@@ -76,7 +88,7 @@ function ReclamosSidebar() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-4 pb-2 pt-6 text-xs font-semibold uppercase tracking-wider text-slate-500">
+    <div className="px-4 pb-2 pt-6 text-xs font-semibold uppercase tracking-wider text-[#213b5c]/60">
       {children}
     </div>
   );
@@ -99,8 +111,8 @@ function NavLink({
       href={href}
       className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
         active
-          ? "bg-slate-900 text-white shadow-sm"
-          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+          ? "bg-[#f7941d] text-white shadow-sm"
+          : "text-[#213b5c] hover:bg-[#f7941d]/10 hover:text-[#213b5c]"
       }`}
     >
       {indicator && (

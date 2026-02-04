@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
+/* Paleta MisReclamos: azul oscuro + naranja (como landing) */
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #1e293b;
-  --primary-dark: #0f172a;
-  --accent: #3b82f6;
-  --accent-soft: #f97316;
+  --background: #f3f8fd;
+  --foreground: #213b5c;
+  --primary: #213b5c;
+  --primary-dark: #1a2f47;
+  --accent: #f7941d;
+  --accent-hover: #e58519;
+  --accent-soft: #fef3e6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: #213b5c;
+  --color-accent: #f7941d;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -28,13 +32,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(30, 41, 59, 0.2);
+  background: rgba(33, 59, 92, 0.25);
   border-radius: 999px;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(30, 41, 59, 0.4);
+  background: rgba(33, 59, 92, 0.45);
 }
 
 ::-webkit-scrollbar-track {

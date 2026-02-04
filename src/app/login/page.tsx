@@ -33,33 +33,44 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#f3f8fd] px-4">
       <div className="w-full max-w-md">
-        {/* Logo/Brand */}
+        {/* Logo: mismo archivo que el sidebar (public/logo.png) */}
         <div className="text-center mb-10">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-lg bg-slate-900 text-white text-3xl font-bold mb-4 shadow-sm">
-            ⚖
+          <img
+            src="/logo.png"
+            alt="MisReclamos"
+            className="h-14 w-auto mx-auto object-contain mb-4 logo-img"
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+              (e.target as HTMLImageElement).style.display = "none";
+              (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
+            }}
+          />
+          <div className="hidden logo-fallback">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-lg bg-[#213b5c] text-[#f7941d] text-3xl font-bold mb-4 shadow-sm">
+              ⚖
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">MisReclamos</h1>
-          <p className="text-slate-600 text-sm">Sistema de gestión legal</p>
+          <h1 className="text-3xl font-bold text-[#213b5c] mb-2 tracking-tight">MisReclamos</h1>
+          <p className="text-[#213b5c]/70 text-sm">Tus derechos, tu abogado</p>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-lg bg-white p-8 shadow-sm border border-slate-200">
+        <div className="rounded-xl bg-white p-8 shadow-sm border border-[#f7941d]/30">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-1">Acceso interno</h2>
-            <p className="text-sm text-slate-500">Ingresa tus credenciales para continuar</p>
+            <h2 className="text-xl font-semibold text-[#213b5c] mb-1">Acceso interno</h2>
+            <p className="text-sm text-[#213b5c]/70">Ingresa tus credenciales para continuar</p>
           </div>
           
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700" htmlFor="password">
+              <label className="text-sm font-medium text-[#213b5c]" htmlFor="password">
                 Contraseña
               </label>
               <input
                 id="password"
                 type="password"
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none transition-all"
+                className="w-full rounded-lg border border-[#213b5c]/30 bg-white px-4 py-3 text-[#213b5c] focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] focus:outline-none transition-all"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Dejar vacío si APP_PASSWORD no está configurado"
@@ -73,7 +84,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex w-full items-center justify-center rounded-lg bg-[#f7941d] px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#e58519] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? "Ingresando..." : "Ingresar"}
             </button>
@@ -81,7 +92,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center mt-8 text-xs text-slate-500">
+        <p className="text-center mt-8 text-xs text-[#213b5c]/60">
           Sistema de gestión de reclamos y casos legales
         </p>
       </div>
