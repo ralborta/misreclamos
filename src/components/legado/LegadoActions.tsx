@@ -82,7 +82,7 @@ export function LegadoActions({ legadoId, phone }: Props) {
       {phone && (
         <form onSubmit={handleEnviarMensaje} className="space-y-2">
           <label className="block text-sm font-semibold text-[#213b5c]">
-            Enviar mensaje por BuilderBot (WhatsApp)
+            Enviar mensaje por WhatsApp
           </label>
           <textarea
             value={message}
