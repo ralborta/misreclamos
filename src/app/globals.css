@@ -26,6 +26,13 @@ body {
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
+/* Títulos al estilo landing: azul oscuro, peso fuerte */
+h1, .text-page-title {
+  color: #213b5c;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

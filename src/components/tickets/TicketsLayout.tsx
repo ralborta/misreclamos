@@ -24,34 +24,34 @@ function ReclamosSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-[#f7941d]/20 flex flex-col shadow-sm">
-      {/* Header: logo en public/logo.png (o public/logo.svg); si no existe se muestra el texto */}
-      <div className="px-6 py-6 border-b border-[#f7941d]/30">
-        <Link href="/tickets" className="flex items-center gap-3 hover:opacity-90 transition">
+    <aside className="w-64 flex flex-col shadow-lg">
+      {/* Barra superior azul oscuro (estilo landing): logo en public/logo.png */}
+      <div className="bg-[#213b5c] px-4 py-5">
+        <Link href="/tickets" className="flex flex-col gap-1 hover:opacity-95 transition">
           <img
             src="/logo.png"
             alt="MisReclamos"
-            className="h-12 w-auto object-contain object-left logo-img"
+            className="h-10 w-auto object-contain object-left logo-img"
             onError={(e) => {
               const el = e.target as HTMLImageElement;
               el.style.display = "none";
               el.nextElementSibling?.classList.remove("hidden");
             }}
           />
-          <div className="hidden logo-fallback flex items-center gap-3">
-            <div className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#213b5c] text-[#f7941d] text-xl font-bold shadow-sm">
+          <div className="hidden logo-fallback flex items-center gap-2">
+            <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded bg-white/10 text-[#f7941d] text-lg font-bold">
               ⚖
-            </div>
+            </span>
             <div>
-              <span className="text-lg font-bold block text-[#213b5c]">MisReclamos</span>
-              <span className="text-xs text-[#213b5c]/70 font-normal">Tus derechos, tu abogado</span>
+              <span className="text-base font-bold uppercase tracking-tight text-[#f7941d] block">MisReclamos</span>
+              <span className="text-xs text-white/90 font-normal">Tus derechos, tu abogado</span>
             </div>
           </div>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-6 text-sm overflow-y-auto">
+      {/* Navegación: fondo claro, texto azul */}
+      <nav className="flex-1 space-y-1 px-3 py-5 text-sm overflow-y-auto bg-[#f3f8fd] border-r border-[#213b5c]/10">
         <SectionTitle>Inicio</SectionTitle>
         <NavLink label="Dashboard" href="/dashboard" />
         <NavLink label="Todos los Casos" href="/tickets" />
@@ -73,13 +73,13 @@ function ReclamosSidebar() {
         <NavLink label="Configuración" href="/configuracion" />
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-[#f7941d]/20 bg-[#f3f8fd]">
+      {/* Pie azul oscuro (estilo landing) */}
+      <div className="bg-[#213b5c] px-4 py-4">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-[#213b5c] hover:bg-[#f7941d]/10 rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-colors"
         >
-          <span className="text-[#213b5c]/80">Cerrar Sesión</span>
+          Cerrar sesión
         </button>
       </div>
     </aside>
@@ -88,7 +88,7 @@ function ReclamosSidebar() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-4 pb-2 pt-6 text-xs font-semibold uppercase tracking-wider text-[#213b5c]/60">
+    <div className="px-4 pb-2 pt-5 text-[11px] font-bold uppercase tracking-widest text-[#213b5c]">
       {children}
     </div>
   );
@@ -109,10 +109,10 @@ function NavLink({
   return (
     <Link
       href={href}
-      className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+      className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
         active
           ? "bg-[#f7941d] text-white shadow-sm"
-          : "text-[#213b5c] hover:bg-[#f7941d]/10 hover:text-[#213b5c]"
+          : "text-[#213b5c] hover:bg-[#213b5c]/10 hover:text-[#213b5c]"
       }`}
     >
       {indicator && (
