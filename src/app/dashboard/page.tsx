@@ -122,6 +122,14 @@ async function getDashboardStats() {
       take: 5,
     });
 
+    const ticketsByLegalType = await prisma.ticket.groupBy({
+      by: ["legalType"],
+      _count: true,
+      orderBy: {
+        _count: { legalType: "desc" },
+      },
+    });
+
     return {
       totalTickets,
       ticketsToday,
@@ -148,6 +156,10 @@ async function getDashboardStats() {
         name: c.name || c.phone,
         phone: c.phone,
         totalTickets: c._count.tickets,
+      })),
+      ticketsByLegalType: ticketsByLegalType.map((t) => ({
+        legalType: t.legalType ?? "Sin caso",
+        count: t._count,
       })),
     };
   } catch (error: any) {
