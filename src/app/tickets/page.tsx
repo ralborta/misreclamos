@@ -87,7 +87,7 @@ export default async function TicketsPage() {
           <SummaryCard
             label="Esperando Cliente"
             tickets={waitingTickets}
-            color="slate"
+            color="emerald"
             description="Aguardando respuesta"
           />
           <SummaryCard
@@ -141,37 +141,65 @@ function SummaryCard({
   color: string;
   description?: string;
 }) {
-  const colorClasses: Record<string, { bg: string; text: string; border: string; card: string }> = {
+  const colorClasses: Record<string, {
+    bg: string;
+    headerBg: string;
+    title: string;
+    border: string;
+    shadow: string;
+    hoverShadow: string;
+    card: string;
+  }> = {
     blue: {
-      bg: "bg-blue-50",
-      text: "text-blue-700",
+      bg: "bg-white",
+      headerBg: "bg-gradient-to-r from-blue-500 to-blue-600",
+      title: "text-white",
       border: "border-blue-200",
-      card: "hover:border-blue-400 hover:bg-blue-100/50",
+      shadow: "shadow-md shadow-blue-200/40",
+      hoverShadow: "hover:shadow-xl hover:shadow-blue-300/50 hover:-translate-y-1",
+      card: "hover:border-blue-400 hover:bg-blue-50/80 hover:shadow-md",
     },
     orange: {
-      bg: "bg-orange-50",
-      text: "text-orange-700",
+      bg: "bg-white",
+      headerBg: "bg-gradient-to-r from-orange-500 to-orange-600",
+      title: "text-white",
       border: "border-orange-200",
-      card: "hover:border-orange-400 hover:bg-orange-100/50",
+      shadow: "shadow-md shadow-orange-200/40",
+      hoverShadow: "hover:shadow-xl hover:shadow-orange-300/50 hover:-translate-y-1",
+      card: "hover:border-orange-400 hover:bg-orange-50/80 hover:shadow-md",
     },
     slate: {
-      bg: "bg-slate-50",
-      text: "text-slate-700",
+      bg: "bg-white",
+      headerBg: "bg-gradient-to-r from-slate-600 to-slate-700",
+      title: "text-white",
       border: "border-slate-200",
-      card: "hover:border-slate-300 hover:bg-slate-100/50",
+      shadow: "shadow-md shadow-slate-200/50",
+      hoverShadow: "hover:shadow-xl hover:shadow-slate-300/50 hover:-translate-y-1",
+      card: "hover:border-slate-400 hover:bg-slate-50/80 hover:shadow-md",
+    },
+    emerald: {
+      bg: "bg-white",
+      headerBg: "bg-gradient-to-r from-emerald-500 to-emerald-600",
+      title: "text-white",
+      border: "border-emerald-200",
+      shadow: "shadow-md shadow-emerald-200/40",
+      hoverShadow: "hover:shadow-xl hover:shadow-emerald-300/50 hover:-translate-y-1",
+      card: "hover:border-emerald-400 hover:bg-emerald-50/80 hover:shadow-md",
     },
   };
 
   const colors = colorClasses[color] || colorClasses.slate;
 
   return (
-    <div className={`rounded-xl border ${colors.bg} ${colors.border} shadow-sm overflow-hidden`}>
-      <div className="p-4 border-b border-slate-200/60 bg-white/50">
-        <div className={`text-xs font-semibold ${colors.text} uppercase tracking-wide`}>{label}</div>
-        <div className="text-2xl font-bold text-slate-900 mt-0.5">{tickets.length}</div>
-        {description && <div className="text-xs text-slate-600 mt-1">{description}</div>}
+    <div
+      className={`rounded-xl border ${colors.bg} ${colors.border} ${colors.shadow} ${colors.hoverShadow} overflow-hidden transition-all duration-300 ease-out`}
+    >
+      <div className={`p-4 ${colors.headerBg}`}>
+        <div className={`text-xs font-bold ${colors.title} uppercase tracking-widest`}>{label}</div>
+        <div className={`text-3xl font-extrabold ${colors.title} mt-1`}>{tickets.length}</div>
+        {description && <div className="text-xs text-white/90 mt-1.5">{description}</div>}
       </div>
-      <div className="p-2 max-h-[280px] overflow-y-auto space-y-1.5">
+      <div className="p-2 max-h-[280px] overflow-y-auto space-y-1.5 bg-slate-50/50">
         {tickets.length === 0 ? (
           <p className="text-xs text-slate-500 py-2 px-2">Ningún caso</p>
         ) : (
@@ -179,7 +207,7 @@ function SummaryCard({
             <Link
               key={t.id}
               href={`/tickets/${t.id}`}
-              className={`block rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition-all ${colors.card}`}
+              className={`block rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-left transition-all duration-200 ${colors.card}`}
             >
               <div className="font-semibold text-slate-900 text-sm truncate">{t.code}</div>
               <div className="text-xs text-slate-600 truncate mt-0.5">

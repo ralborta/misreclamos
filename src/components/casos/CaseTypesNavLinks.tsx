@@ -56,10 +56,10 @@ export function CaseTypesNavLinks() {
           <Link
             key={c.id}
             href={href}
-            className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+            className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-out ${
               active
-                ? "bg-[#f7941d] text-white shadow-sm"
-                : "text-[#213b5c] hover:bg-[#213b5c]/10 hover:text-[#213b5c]"
+                ? "bg-[#f7941d] text-white shadow-md scale-[1.02]"
+                : "text-[#213b5c] hover:bg-[#213b5c]/15 hover:text-[#213b5c] hover:translate-x-1 hover:shadow-sm"
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${indicator} flex-shrink-0`} />
