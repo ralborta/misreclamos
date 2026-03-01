@@ -127,7 +127,7 @@ export function TicketsPageContent({
         </div>
       </div>
 
-      {/* Pestañas por estado */}
+      {/* Pestañas por estado (diseño: pastillas con iconos y badge) */}
       <div className="flex flex-wrap gap-2">
         <StatusTab
           label="Abiertos"
@@ -135,7 +135,7 @@ export function TicketsPageContent({
           active={statusFilter === "OPEN"}
           onClick={() => setStatusFilter(statusFilter === "OPEN" ? "ALL" : "OPEN")}
           color="bg-[#2196F3]"
-          icon="📞"
+          iconSvg="pen"
         />
         <StatusTab
           label="En progreso"
@@ -149,30 +149,37 @@ export function TicketsPageContent({
           count={counts.waiting}
           active={statusFilter === "WAITING_CUSTOMER"}
           onClick={() => setStatusFilter(statusFilter === "WAITING_CUSTOMER" ? "ALL" : "WAITING_CUSTOMER")}
-          color="bg-amber-500"
+          color="bg-orange-500"
         />
         <StatusTab
           label="Urgentes"
           count={counts.urgent}
           active={statusFilter === "URGENT"}
           onClick={() => setStatusFilter(statusFilter === "URGENT" ? "ALL" : "URGENT")}
-          color="bg-emerald-600"
-          icon="🔔"
+          color="bg-red-500"
+          iconSvg="warning"
         />
       </div>
 
-      {/* Filtros secundarios */}
+      {/* Filtros: Tipo (dropdown con chevron) + Limpiar */}
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={tipoFilter}
-          onChange={(e) => setTipoFilter(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#2196F3] focus:outline-none focus:ring-1 focus:ring-[#2196F3]"
-        >
-          <option value="">Tipo</option>
-          {tipos.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={tipoFilter}
+            onChange={(e) => setTipoFilter(e.target.value)}
+            className="appearance-none rounded-lg border border-slate-200 bg-white pl-3 pr-8 py-2 text-sm text-slate-700 focus:border-[#2196F3] focus:outline-none focus:ring-1 focus:ring-[#2196F3]"
+          >
+            <option value="">Tipo</option>
+            {tipos.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+            </svg>
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -180,37 +187,25 @@ export function TicketsPageContent({
             setStatusFilter("ALL");
             setTipoFilter("");
           }}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
         >
           Limpiar
         </button>
       </div>
 
-      {/* Tabla */}
+      {/* Tabla: ID, ASUNTO, CLIENTE, TIPO, ESTADO, ASIGNADO, Última + */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  ID
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  Asunto
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  Cliente
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  Tipo
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  Estado
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
-                  Asignado
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">ID</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">Asunto</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">Cliente</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">Tipo</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">Estado</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">Asignado</th>
+                <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                   <SortableHeader
                     label="Última"
                     active={sortBy === "lastMessageAt"}
@@ -223,13 +218,14 @@ export function TicketsPageContent({
             <tbody className="divide-y divide-slate-100">
               {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
                     No hay casos que coincidan con los filtros.
                   </td>
                 </tr>
               ) : (
                 filteredTickets.map((ticket) => {
                   const last = formatDateTime(ticket.lastMessageAt);
+                  const isResolved = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
                   return (
                     <tr
                       key={ticket.id}
@@ -240,21 +236,32 @@ export function TicketsPageContent({
                         {ticket.code}
                       </td>
                       <td className="px-4 py-3">
-                        <Link
-                          href={`/tickets/${ticket.id}`}
-                          className="text-sm font-medium text-[#2196F3] hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {(ticket.title || ticket.code).slice(0, 50)}
-                          {(ticket.title || ticket.code).length > 50 ? "…" : ""}
-                        </Link>
-                        <div className="text-xs text-slate-500 mt-0.5">{ticket.contactName || "—"}</div>
+                        <div className="flex items-start gap-2">
+                          {isResolved && (
+                            <span className="mt-0.5 shrink-0 text-emerald-500" title="Resuelto">
+                              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                          <div className="min-w-0">
+                            <Link
+                              href={`/tickets/${ticket.id}`}
+                              className="text-sm font-medium text-[#2196F3] hover:underline block truncate"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {(ticket.title || ticket.code).slice(0, 60)}
+                              {(ticket.title || ticket.code).length > 60 ? "…" : ""}
+                            </Link>
+                            <div className="text-xs text-slate-500 mt-0.5">{ticket.contactName || "Sin nombre"}</div>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {ticket.customer?.name || "Empresa desconocida"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                        <span className={tipoBadgeClass(ticket.legalType)}>
                           {ticket.legalType || "Sin caso"}
                         </span>
                       </td>
@@ -287,26 +294,37 @@ function StatusTab({
   active,
   onClick,
   color,
-  icon,
+  iconSvg,
 }: {
   label: string;
   count: number;
   active: boolean;
   onClick: () => void;
   color: string;
-  icon?: string;
+  iconSvg?: "pen" | "warning";
 }) {
+  const penIcon = (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+    </svg>
+  );
+  const warningIcon = (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+    </svg>
+  );
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all ${
+      className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all ${
         active ? `${color} ring-2 ring-offset-2 ring-slate-300` : `${color} opacity-90 hover:opacity-100`
       }`}
     >
-      {icon && <span className="text-base">{icon}</span>}
+      {iconSvg === "pen" && penIcon}
+      {iconSvg === "warning" && warningIcon}
       <span>{label}</span>
-      <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">{count}</span>
+      <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">{count}</span>
     </button>
   );
 }
@@ -323,13 +341,20 @@ function SortableHeader({
   onClick: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center gap-1 hover:text-slate-900">
+    <button type="button" onClick={onClick} className="flex items-center gap-1 hover:text-slate-900 text-left">
       {label}
-      <span className="text-slate-400">
+      <span className="text-slate-500">
         {active ? (dir === "asc" ? "↑" : "↓") : "↓"}
       </span>
     </button>
   );
+}
+
+function tipoBadgeClass(legalType: string | null | undefined): string {
+  const t = legalType || "Sin caso";
+  if (t === "Sin caso") return "inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700";
+  if (t.toLowerCase().includes("tránsito") || t.toLowerCase().includes("transito")) return "inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800";
+  return "inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800";
 }
 
 function statusBadgeClass(status: TicketStatus): string {
