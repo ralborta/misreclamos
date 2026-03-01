@@ -139,6 +139,7 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                 />
               </div>
             </div>
+          </div>
 
           <div className="space-y-3">
             <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
