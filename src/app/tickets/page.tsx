@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { TicketsPageContent } from "@/components/tickets/TicketsPageContent";
+import { getTicketsAndCounts } from "@/app/tickets/getTicketsAndCounts";
 
 export const dynamic = "force-dynamic";
 
@@ -9,55 +9,10 @@ export default async function TicketsPage() {
   await requireSession();
 
   try {
-    const tickets = await prisma.ticket.findMany({
-      select: {
-        id: true,
-        code: true,
-        title: true,
-        contactName: true,
-        status: true,
-        priority: true,
-        legalType: true,
-        lastMessageAt: true,
-        createdAt: true,
-        customer: {
-          select: {
-            name: true,
-            phone: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: { lastMessageAt: "desc" },
-      take: 200,
-    });
-
-    const openCount = tickets.filter((t) => t.status === "OPEN").length;
-    const inProgressCount = tickets.filter((t) => t.status === "IN_PROGRESS").length;
-    const waitingCount = tickets.filter((t) => t.status === "WAITING_CUSTOMER").length;
-    const urgentCount = tickets.filter((t) => t.priority === "URGENT").length;
-
-    const serialized = tickets.map((t) => ({
-      ...t,
-      lastMessageAt: t.lastMessageAt.toISOString(),
-      createdAt: t.createdAt.toISOString(),
-    }));
-
+    const { tickets, counts } = await getTicketsAndCounts();
     return (
       <TicketsLayout>
-        <TicketsPageContent
-          tickets={serialized}
-          counts={{
-            open: openCount,
-            inProgress: inProgressCount,
-            waiting: waitingCount,
-            urgent: urgentCount,
-          }}
-        />
+        <TicketsPageContent tickets={tickets} counts={counts} />
       </TicketsLayout>
     );
   } catch (error: any) {

@@ -21,16 +21,29 @@ interface Ticket {
   assignedTo?: { name: string } | null;
 }
 
+type StatusFilterValue = "ALL" | "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "URGENT" | "RESOLVED" | "CLOSED";
+
 export function TicketsPageContent({
   tickets,
   counts,
+  initialStatusFilter,
+  pageTitle = "Todos los Casos",
 }: {
   tickets: Ticket[];
-  counts: { open: number; inProgress: number; waiting: number; urgent: number };
+  counts: {
+    open: number;
+    inProgress: number;
+    waiting: number;
+    urgent: number;
+    resolved?: number;
+    closed?: number;
+  };
+  initialStatusFilter?: StatusFilterValue;
+  pageTitle?: string;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "URGENT">("ALL");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>(initialStatusFilter ?? "ALL");
   const [tipoFilter, setTipoFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"lastMessageAt" | "createdAt" | "code">("lastMessageAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -99,7 +112,7 @@ export function TicketsPageContent({
     <div className="w-full space-y-5">
       {/* Header: título + búsqueda + Nuevo caso */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-slate-800">Todos los Casos</h1>
+        <h1 className="text-2xl font-bold text-slate-800">{pageTitle}</h1>
         <div className="flex flex-1 sm:max-w-md items-center gap-2">
           <div className="relative flex-1">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -159,6 +172,20 @@ export function TicketsPageContent({
           color="bg-red-500"
           iconSvg="warning"
         />
+        <StatusTab
+          label="Resueltos"
+          count={counts.resolved ?? 0}
+          active={statusFilter === "RESOLVED"}
+          onClick={() => setStatusFilter(statusFilter === "RESOLVED" ? "ALL" : "RESOLVED")}
+          color="bg-emerald-600"
+        />
+        <StatusTab
+          label="Cerrados"
+          count={counts.closed ?? 0}
+          active={statusFilter === "CLOSED"}
+          onClick={() => setStatusFilter(statusFilter === "CLOSED" ? "ALL" : "CLOSED")}
+          color="bg-slate-600"
+        />
       </div>
 
       {/* Filtros: Tipo (dropdown con chevron) + Limpiar */}
@@ -184,7 +211,7 @@ export function TicketsPageContent({
           type="button"
           onClick={() => {
             setSearch("");
-            setStatusFilter("ALL");
+            setStatusFilter(initialStatusFilter ?? "ALL");
             setTipoFilter("");
           }}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
