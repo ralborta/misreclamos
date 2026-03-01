@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { LegadoActions } from "@/components/legado/LegadoActions";
 import { CopyButton } from "@/components/legado/CopyButton";
+import { MessagePopup } from "@/components/legado/MessagePopup";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ export default async function LegadoDetailPage({
   const tipoConsulta = getDataValue(data, ["TipoConsulta", "Tipo Consulta", "Tipo de consulta"]);
   const status = getDataValue(data, ["Status", "status"]);
   const fechaContacto = getDataValue(data, ["FechaContacto", "Fecha Contacto", "Fecha"]);
+  const mensaje = getDataValue(data, ["Mensaje", "mensaje"]);
   const source = legado.source || "Legado.xlsx";
   const importDate = new Date(legado.createdAt).toLocaleDateString("es-AR", {
     day: "2-digit",
@@ -98,6 +100,7 @@ export default async function LegadoDetailPage({
               <span className="font-semibold text-slate-900">{phoneDisplay}</span>
             </div>
             <span className="text-sm text-slate-600">Email: {email}</span>
+            <MessagePopup message={mensaje} />
             <div className="flex items-center gap-2">
               {phone && (
                 <a
