@@ -40,7 +40,7 @@ export function CaseTypesNavLinks() {
 
   if (loading) {
     return (
-      <div className="px-4 py-2 text-xs text-slate-400">
+      <div className="px-3 py-2 text-xs text-white/50">
         Cargando tipos...
       </div>
     );
@@ -56,14 +56,15 @@ export function CaseTypesNavLinks() {
           <Link
             key={c.id}
             href={href}
-            className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200 ease-out ${
+            className={`group flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out ${
               active
-                ? "bg-[#f7941d] text-white shadow-md scale-[1.02]"
-                : "text-[#213b5c] hover:bg-[#213b5c]/15 hover:text-[#213b5c] hover:translate-x-1 hover:shadow-sm"
+                ? "bg-[#2196F3] text-white shadow-sm"
+                : "text-white/90 hover:bg-white/10 hover:text-white"
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${indicator} flex-shrink-0`} />
             <span className="flex-1 min-w-0 break-words">{c.label}</span>
+            <span className="text-white/50 text-xs">›</span>
           </Link>
         );
       })}
