@@ -6,9 +6,10 @@ import { useState } from "react";
 type Props = {
   legadoId: string;
   phone: string | null;
+  contactName?: string;
 };
 
-export function LegadoActions({ legadoId, phone }: Props) {
+export function LegadoActions({ legadoId, phone, contactName }: Props) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [migrating, setMigrating] = useState(false);
@@ -17,14 +18,14 @@ export function LegadoActions({ legadoId, phone }: Props) {
   const [sendResult, setSendResult] = useState<"ok" | "error" | null>(null);
 
   const handleBorrar = async () => {
-    if (!confirm("¿Borrar este registro de legado? No se puede deshacer.")) return;
+    if (!confirm("¿Eliminar este registro de legado? No se puede deshacer.")) return;
     setDeleting(true);
     try {
       const res = await fetch(`/api/legado/${legadoId}`, { method: "DELETE" });
       if (res.ok) router.push("/legado");
       else {
         const d = await res.json().catch(() => ({}));
-        alert(d.error || "Error al borrar");
+        alert(d.error || "Error al eliminar");
       }
     } catch {
       alert("Error de red");
@@ -77,59 +78,67 @@ export function LegadoActions({ legadoId, phone }: Props) {
     }
   };
 
+  const sendLabel = contactName
+    ? `Enviar mensaje al ${contactName}`
+    : "Enviar mensaje";
+
   return (
-    <div className="mt-8 space-y-6 border-t border-slate-100 pt-6">
+    <div className="space-y-5 border-t border-slate-100 pt-5">
       {phone && (
-        <form onSubmit={handleEnviarMensaje} className="space-y-2">
-          <label className="block text-sm font-semibold text-[#213b5c]">
-            Enviar mensaje por WhatsApp
-          </label>
+        <form onSubmit={handleEnviarMensaje} className="space-y-3">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Escribí el mensaje a enviar..."
-            rows={3}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#f7941d] focus:outline-none focus:ring-1 focus:ring-[#f7941d]"
+            rows={2}
+            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             disabled={sending}
           />
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <button
               type="submit"
               disabled={sending || !message.trim()}
-              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {sending ? "Enviando..." : "Enviar mensaje"}
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 12L3 21l18-9L3 0l18 9-15 9z" />
+              </svg>
+              {sending ? "Enviando..." : sendLabel}
             </button>
-            {sendResult === "ok" && (
-              <span className="text-sm font-medium text-emerald-600">Mensaje enviado</span>
-            )}
+            <div className="text-xs text-slate-500 space-y-0.5">
+              <p>Último mensaje enviado: —</p>
+              <p>Última respuesta: —</p>
+            </div>
           </div>
+          {sendResult === "ok" && (
+            <span className="text-sm font-medium text-emerald-600">Mensaje enviado</span>
+          )}
         </form>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 pt-2">
         <button
           type="button"
           onClick={handleMigrar}
           disabled={migrating || !phone}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#f7941d] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#e58519] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {migrating ? "Migrando..." : "Migrar como caso nuevo"}
+          {migrating ? "Migrando..." : "Migrar como caso activo"}
         </button>
         <button
           type="button"
           onClick={handleBorrar}
           disabled={deleting}
-          className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
         >
-          {deleting ? "Borrando..." : "Borrar registro"}
+          {deleting ? "Eliminando..." : "Eliminar registro"}
         </button>
       </div>
 
       {!phone && (
-        <span className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500">
           Sin teléfono válido: no se puede enviar mensaje ni migrar.
-        </span>
+        </p>
       )}
     </div>
   );
