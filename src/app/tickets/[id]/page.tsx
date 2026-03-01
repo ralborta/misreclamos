@@ -48,39 +48,56 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
   // Debug: verificar que los mensajes se carguen
   console.log(`[TicketDetail] Ticket ${ticket.code}: ${conversation.length} mensajes cargados`);
 
+  const contactName = ticket.contactName || ticket.customer?.name || "Sin nombre";
+  const phone = ticket.customer?.phone ? formatPhone(ticket.customer.phone) : "—";
+
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen p-6 bg-slate-50/50">
       <TicketLiveRefresh />
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
-        <div className="flex items-center justify-between">
+        {/* Header estilo diseño: volver, TICKET #, cliente + tipo + teléfono, botones */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <Link href="/tickets" className="text-sm text-indigo-600 hover:underline">
+            <Link href="/tickets" className="text-sm text-[#2196F3] hover:underline">
               ← Volver a tickets
             </Link>
-            <h1 className="text-2xl font-semibold text-slate-900">Ticket {ticket.code}</h1>
-            <p className="text-sm text-slate-600">
-              <span className="font-medium">Empresa:</span> {ticket.customer?.name || "Desconocida"} • 
-              <span className="font-medium"> Contacto:</span> {ticket.contactName}
-            </p>
-            <p className="text-xs text-slate-500">📱 {ticket.customer?.phone}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="inline-flex items-center gap-2">
-              <span className="text-sm font-semibold text-slate-700">Estado:</span>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-800">
-                {statusLabels[ticket.status as TicketStatus]}
-              </span>
-              <span className="text-sm font-semibold text-slate-700">Tipo de caso:</span>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-800">
-                {ticket.legalType || "Sin caso"}
-              </span>
+            <h1 className="mt-1 text-xl font-bold text-slate-900">TICKET #{ticket.code}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-slate-800">{contactName}</span>
+              <CaseTypeIcon legalType={ticket.legalType} />
+              <span className="text-sm text-slate-600">{ticket.legalType || "Sin caso"}</span>
+              <span className="text-slate-400">· · ·</span>
             </div>
-            <StatusActions ticketId={ticket.id} currentStatus={ticket.status as TicketStatus} />
+            <p className="mt-1 text-xs text-slate-500">{phone}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusActions ticketId={ticket.id} currentStatus={ticket.status as TicketStatus} variant="header" />
+            <AssignAgentDropdown
+              ticketId={ticket.id}
+              currentAgentId={ticket.assignedToUserId}
+              agentes={agentes}
+              variant="header"
+            />
+            <a
+              href="#conversacion"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#2196F3] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1976D2] transition-colors"
+            >
+              Responder
+            </a>
+            <a
+              href="#conversacion"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#2196F3] text-white shadow-sm hover:bg-[#1976D2] transition-colors"
+              aria-label="Ir a conversación"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </a>
           </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2 flex flex-col min-h-0">
+          <div id="conversacion" className="lg:col-span-2 flex flex-col min-h-0">
             <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 flex flex-col flex-1 min-h-0 max-h-[70vh]">
               <div className="text-sm font-semibold text-slate-800 px-4 pt-4 pb-2 shrink-0">Conversación</div>
               <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-3 space-y-4">
@@ -170,5 +187,33 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
         </div>
       </div>
     </div>
+  );
+}
+
+function formatPhone(phone: string): string {
+  const n = phone.replace(/\D/g, "");
+  if (n.length >= 10) return `+${n.slice(0, 2)} ${n.slice(2, 4)} ${n.slice(4, 7)}-${n.slice(7)}`;
+  return phone;
+}
+
+function CaseTypeIcon({ legalType }: { legalType: string | null }) {
+  if (!legalType) return null;
+  const t = legalType.toLowerCase();
+  if (t.includes("tránsito") || t.includes("transito")) {
+    return (
+      <span className="inline-flex text-orange-500" title={legalType}>
+        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+          <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+        </svg>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex text-slate-500">
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+      </svg>
+    </span>
   );
 }
