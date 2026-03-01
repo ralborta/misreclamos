@@ -80,52 +80,65 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-              <div className="text-sm font-semibold text-slate-800">Conversación</div>
-              <div className="mt-3 space-y-3">
+          <div className="lg:col-span-2 flex flex-col min-h-0">
+            <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 flex flex-col flex-1 min-h-0 max-h-[70vh]">
+              <div className="text-sm font-semibold text-slate-800 px-4 pt-4 pb-2 shrink-0">Conversación</div>
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-3 space-y-4">
                 {conversation.length === 0 ? (
-                  <div className="text-sm text-slate-500">Sin mensajes aún.</div>
+                  <div className="text-sm text-slate-500 py-6">Sin mensajes aún.</div>
                 ) : (
                   conversation.map((msg: any) => {
-                    const createdAt = msg.createdAt instanceof Date 
-                      ? msg.createdAt 
+                    const createdAt = msg.createdAt instanceof Date
+                      ? msg.createdAt
                       : new Date(msg.createdAt);
                     const fromLabel = fromLabels[msg.from as "CUSTOMER" | "BOT" | "HUMAN"] || msg.from;
-                    
+                    const isBot = msg.from === "BOT";
+                    const isAgent = msg.from === "HUMAN";
+                    const bubbleBg = isBot
+                      ? "bg-emerald-100 text-emerald-900"
+                      : isAgent
+                        ? "bg-blue-100 text-blue-900"
+                        : "bg-slate-100 text-slate-800";
+                    const avatarBg = isBot ? "bg-sky-200 text-sky-800" : isAgent ? "bg-blue-200 text-blue-800" : "bg-slate-300 text-slate-700";
+                    const timeStr = createdAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+                    const dateStr = createdAt.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
                     return (
-                      <div key={msg.id} className="flex flex-col gap-1">
-                        <div className="text-xs text-slate-500">
-                          {fromLabel} · {createdAt.toLocaleString("es-AR")}
+                      <div key={msg.id} className="flex gap-3">
+                        <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${avatarBg}`}>
+                          {isBot ? (
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>
+                          ) : (
+                            <span>{(fromLabel.charAt(0) || "?")}</span>
+                          )}
                         </div>
-                        <div>
-                          <div
-                            className={`max-w-2xl rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                              msg.from === "CUSTOMER"
-                                ? "bg-slate-100 text-slate-800"
-                                : msg.from === "BOT"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-blue-100 text-blue-900"
-                            }`}
-                          >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-slate-800">{fromLabel}</span>
+                            <span className="text-xs text-slate-500">{timeStr}</span>
+                          </div>
+                          <div className={`mt-1 max-w-2xl rounded-xl px-4 py-2.5 text-sm ${bubbleBg}`}>
                             {msg.text || "[Sin texto]"}
                           </div>
                           {msg.attachments && (
-                            <MessageAttachments attachments={msg.attachments as any} />
+                            <div className="mt-1">
+                              <MessageAttachments attachments={msg.attachments as any} />
+                            </div>
                           )}
+                          <div className="text-[10px] text-slate-400 mt-0.5">{dateStr}</div>
                         </div>
                       </div>
                     );
                   })
                 )}
               </div>
+              <div className="shrink-0 border-t border-slate-100 p-4">
+                <MessageComposer
+                  ticketId={ticket.id}
+                  customerId={ticket.customer?.id}
+                  botPaused={!!ticket.customer?.botPausedAt}
+                />
+              </div>
             </div>
-            <MessageComposer
-              ticketId={ticket.id}
-              customerId={ticket.customer?.id}
-              botPaused={!!ticket.customer?.botPausedAt}
-            />
-          </div>
 
           <div className="space-y-3">
             <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
