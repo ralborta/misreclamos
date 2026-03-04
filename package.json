@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "import-legado": "tsx scripts/import-legado.ts"
+    "import-legado": "tsx scripts/import-legado.ts",
+    "db:reset-data": "tsx scripts/borrar-todos-datos.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.1",

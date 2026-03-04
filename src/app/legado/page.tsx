@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
+import { ImportLegadoForm } from "@/components/legado/ImportLegadoForm";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,8 @@ export default async function LegadoPage() {
           </p>
         </div>
 
+        <ImportLegadoForm />
+
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -75,7 +78,7 @@ export default async function LegadoPage() {
                 {registros.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
-                      No hay registros de legado. Usá el script <code className="rounded bg-slate-100 px-1">import-legado</code> para cargar un Excel.
+                      No hay registros de legado. Subí un archivo Excel arriba para importar.
                     </td>
                   </tr>
                 ) : (
