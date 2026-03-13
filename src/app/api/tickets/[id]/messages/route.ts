@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 import { sessionOptions, type SessionData } from "@/lib/auth";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { summarizeConversation } from "@/lib/openai";
@@ -110,8 +111,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       direction,
       from,
       text: messageText,
-      attachments: attachments.length > 0 ? attachments : undefined,
-      rawPayload,
+      attachments: attachments.length > 0 ? (attachments as Prisma.InputJsonValue) : undefined,
+      rawPayload: rawPayload as Prisma.InputJsonValue,
     },
   });
 
