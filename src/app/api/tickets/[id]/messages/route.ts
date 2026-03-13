@@ -44,12 +44,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     from = (formData.get("from") as typeof from) || "HUMAN";
     const file = formData.get("file") as File | null;
     if (file && file.size > 0) {
-      const url = await uploadFileToBlob(file);
-      attachments.push({
-        url,
-        type: getMimeTypeLabel(file.type),
-        name: file.name || "archivo",
-      });
+      try {
+        const url = await uploadFileToBlob(file);
+        attachments.push({
+          url,
+          type: getMimeTypeLabel(file.type),
+          name: file.name || "archivo",
+        });
+      } catch (uploadErr: unknown) {
+        const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
+        console.error("[Messages] Error subiendo adjunto:", msg);
+        return NextResponse.json({
+          error: "No se pudo subir el archivo",
+          details: msg,
+        }, { status: 500 });
+      }
     }
     if (!text.trim() && attachments.length === 0) {
       return NextResponse.json({ error: "Escribe un mensaje o adjunta un archivo" }, { status: 400 });

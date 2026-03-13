@@ -39,7 +39,8 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setError(data.error || "No se pudo enviar el mensaje");
+          const msg = [data.error, data.details].filter(Boolean).join(": ") || "No se pudo enviar el mensaje";
+          setError(msg);
           setLoading(false);
           return;
         }
@@ -57,7 +58,8 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          setError(data.error || "No se pudo guardar el mensaje");
+          const msg = [data.error, data.details].filter(Boolean).join(": ") || "No se pudo guardar el mensaje";
+          setError(msg);
           setLoading(false);
           return;
         }
