@@ -106,11 +106,18 @@ export async function POST(req: Request) {
 
 async function processIncomingMessage({ eventName, data }: { eventName: string; data: any }) {
 
-  const messageText = data.body || "";
+  let messageText = data.body || "";
   const customerPhone = data.from;
   const customerName = data.name; // Nombre de WhatsApp (la persona que escribe)
   const attachments = data.attachment || [];
   const urlTempFile = data.urlTempFile; // URL temporal de BuilderBot para multimedia
+
+  // Algunos eventos de documentos/imágenes llegan con body de sistema tipo "_event_document__...".
+  // Si hay adjuntos y el texto parece un marcador de evento, lo ocultamos y dejamos solo el adjunto.
+  const trimmedBody = (messageText || "").trim();
+  if (attachments.length > 0 && /^_event_(document|image|video|audio)__/i.test(trimmedBody)) {
+    messageText = "";
+  }
 
   // Procesar attachments (imágenes, videos, documentos)
   let processedAttachments = await Promise.all(
