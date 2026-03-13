@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { summarizeConversation } from "@/lib/openai";
+import { uploadFileToBlob } from "@/lib/blob";
 
 const messageSchema = z.object({
   text: z.string().min(1),
@@ -14,22 +15,63 @@ const messageSchema = z.object({
   rawPayload: z.record(z.string(), z.any()).optional(),
 });
 
+function getMimeTypeLabel(mime: string): string {
+  if (!mime) return "document";
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return "document";
+}
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const json = await req.json().catch(() => null);
-  const parsed = messageSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Formato inválido", details: parsed.error.flatten() }, { status: 400 });
+
+  let text: string;
+  let direction: "INBOUND" | "OUTBOUND" | "INTERNAL_NOTE" = "OUTBOUND";
+  let from: "CUSTOMER" | "BOT" | "HUMAN" = "HUMAN";
+  let rawPayload: Record<string, unknown> = {};
+  let attachments: { url: string; type: string; name: string }[] = [];
+
+  const contentType = req.headers.get("content-type") || "";
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData();
+    text = (formData.get("text") as string)?.trim() || "";
+    direction = (formData.get("direction") as typeof direction) || "OUTBOUND";
+    from = (formData.get("from") as typeof from) || "HUMAN";
+    const file = formData.get("file") as File | null;
+    if (file && file.size > 0) {
+      const url = await uploadFileToBlob(file);
+      attachments.push({
+        url,
+        type: getMimeTypeLabel(file.type),
+        name: file.name || "archivo",
+      });
+    }
+    if (!text.trim() && attachments.length === 0) {
+      return NextResponse.json({ error: "Escribe un mensaje o adjunta un archivo" }, { status: 400 });
+    }
+  } else {
+    const json = await req.json().catch(() => null);
+    const parsed = messageSchema.safeParse(json);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Formato inválido", details: parsed.error.flatten() }, { status: 400 });
+    }
+    text = parsed.data.text;
+    direction = parsed.data.direction;
+    from = parsed.data.from;
+    rawPayload = parsed.data.rawPayload || {};
   }
 
-  const { text, direction, from, rawPayload } = parsed.data;
+  const messageText = text.trim() || (attachments.length > 0 ? "[Archivo adjunto]" : "");
+  if (!messageText) {
+    return NextResponse.json({ error: "Texto o adjunto requerido" }, { status: 400 });
+  }
 
   // Si es un mensaje OUTBOUND, enviarlo a BuilderBot primero
   if (direction === "OUTBOUND") {
-    // Obtener el teléfono del cliente del ticket
     const ticket = await prisma.ticket.findUnique({
       where: { id },
       include: { customer: true },
@@ -43,18 +85,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "Cliente sin teléfono registrado" }, { status: 400 });
     }
 
-    // Enviar mensaje a BuilderBot → WhatsApp
     try {
+      const mediaUrl = attachments.length > 0 ? attachments[0].url : undefined;
       await sendWhatsAppMessage({
         number: ticket.customer.phone,
-        message: text,
+        message: text.trim() || " ",
+        mediaUrl,
       });
-      console.log(`[Messages] ✅ Mensaje enviado a ${ticket.customer.phone}`);
-    } catch (error: any) {
+      console.log(`[Messages] ✅ Mensaje enviado a ${ticket.customer.phone}${mediaUrl ? " (con adjunto)" : ""}`);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       console.error(`[Messages] ❌ Error al enviar mensaje:`, error);
-      return NextResponse.json({ 
-        error: "No se pudo enviar el mensaje al cliente", 
-        details: error.message 
+      return NextResponse.json({
+        error: "No se pudo enviar el mensaje al cliente",
+        details: err?.message,
       }, { status: 500 });
     }
   }
@@ -65,8 +109,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       ticketId: id,
       direction,
       from,
-      text,
-      rawPayload: rawPayload || {},
+      text: messageText,
+      attachments: attachments.length > 0 ? attachments : undefined,
+      rawPayload,
     },
   });
 
