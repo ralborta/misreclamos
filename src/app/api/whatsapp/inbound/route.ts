@@ -7,17 +7,17 @@ import { uploadToBlob, getFileExtension } from "@/lib/blob";
 import { summarizeConversation, classifyLegalType } from "@/lib/openai";
 // Using string literals instead of Prisma enums for compatibility
 
-// Schema para el formato de BuilderBot.cloud
+// Schema para el formato de BuilderBot.cloud (permisivo: from puede venir como número, body puede faltar)
 const builderbotWebhookSchema = z.object({
   eventName: z.string(),
   data: z.object({
-    body: z.string().optional(),
-    name: z.string().optional(),
-    from: z.string(),
+    body: z.union([z.string(), z.number()]).optional(),
+    name: z.union([z.string(), z.number()]).optional(),
+    from: z.union([z.string(), z.number()]).transform(String),
     attachment: z.array(z.any()).optional(),
-    urlTempFile: z.string().optional(), // URL temporal para archivos multimedia
+    urlTempFile: z.string().optional(),
     projectId: z.string().optional(),
-  }),
+  }).passthrough(),
 });
 
 /** Actualiza el resumen de la conversación con IA (no falla el webhook si falla). */
@@ -106,8 +106,8 @@ export async function POST(req: Request) {
 
 async function processIncomingMessage({ eventName, data }: { eventName: string; data: any }) {
 
-  let messageText = data.body || "";
-  const customerPhone = data.from;
+  let messageText = data.body != null ? String(data.body) : "";
+  const customerPhone = String(data.from);
   const customerName = data.name; // Nombre de WhatsApp (la persona que escribe)
   const attachments = data.attachment || [];
   const urlTempFile = data.urlTempFile; // URL temporal de BuilderBot para multimedia
@@ -119,22 +119,29 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     messageText = "";
   }
 
+  // Solo aceptar URLs absolutas para no guardar rutas relativas (evitar 404 al abrir el adjunto)
+  const isAbsoluteUrl = (u: unknown) => typeof u === "string" && (u.startsWith("http://") || u.startsWith("https://"));
+
   // Procesar attachments (imágenes, videos, documentos)
-  let processedAttachments = await Promise.all(
-    attachments.map(async (att: any) => {
-      const tempUrl = att.url || att;
-      const fileType = att.mimetype || getFileTypeFromUrl(tempUrl);
-      
-      // Subir a Vercel Blob para persistencia
-      const permanentUrl = await uploadToBlob(tempUrl, `attachment-${Date.now()}.${getFileExtension(tempUrl)}`);
-      
-      return {
-        url: permanentUrl,
-        type: fileType,
-        name: att.filename || "archivo",
-      };
-    })
-  );
+  let processedAttachments = (
+    await Promise.all(
+      attachments.map(async (att: any) => {
+        const tempUrl = att.url ?? att;
+        if (!isAbsoluteUrl(tempUrl)) {
+          console.warn(`⚠️ Adjunto con URL no absoluta ignorado (evitar 404): ${typeof tempUrl === "string" ? tempUrl : "[no string]"}`);
+          return null;
+        }
+        const fileType = att.mimetype || getFileTypeFromUrl(tempUrl);
+        try {
+          const permanentUrl = await uploadToBlob(tempUrl, `attachment-${Date.now()}.${getFileExtension(tempUrl)}`);
+          return { url: permanentUrl, type: fileType, name: att.filename || "archivo" };
+        } catch (e: any) {
+          console.error(`❌ Error subiendo adjunto:`, e?.message);
+          return null;
+        }
+      })
+    )
+  ).filter((a): a is { url: string; type: string; name: string } => a != null);
 
   // Si viene urlTempFile pero no attachments, agregar el archivo temporal
   if (urlTempFile && processedAttachments.length === 0) {
@@ -380,21 +387,27 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
     return NextResponse.json({ ok: true, message: "Mensaje saliente vacío, ignorado" });
   }
 
-  // Procesar attachments si los hay
-  let processedAttachments = await Promise.all(
-    attachments.map(async (att: any) => {
-      const tempUrl = att.url || att;
-      const fileType = att.mimetype || getFileTypeFromUrl(tempUrl);
-      
-      const permanentUrl = await uploadToBlob(tempUrl, `attachment-${Date.now()}.${getFileExtension(tempUrl)}`);
-      
-      return {
-        url: permanentUrl,
-        type: fileType,
-        name: att.filename || "archivo",
-      };
-    })
-  );
+  const isAbsoluteUrlOut = (u: unknown) => typeof u === "string" && (u.startsWith("http://") || u.startsWith("https://"));
+
+  let processedAttachments = (
+    await Promise.all(
+      attachments.map(async (att: any) => {
+        const tempUrl = att.url ?? att;
+        if (!isAbsoluteUrlOut(tempUrl)) {
+          console.warn(`⚠️ [Outgoing] Adjunto con URL no absoluta ignorado: ${typeof tempUrl === "string" ? tempUrl : "[no string]"}`);
+          return null;
+        }
+        try {
+          const fileType = att.mimetype || getFileTypeFromUrl(tempUrl);
+          const permanentUrl = await uploadToBlob(tempUrl, `attachment-${Date.now()}.${getFileExtension(tempUrl)}`);
+          return { url: permanentUrl, type: fileType, name: att.filename || "archivo" };
+        } catch (e: any) {
+          console.error(`❌ [Outgoing] Error subiendo adjunto:`, e?.message);
+          return null;
+        }
+      })
+    )
+  ).filter((a): a is { url: string; type: string; name: string } => a != null);
 
   if (urlTempFile && processedAttachments.length === 0) {
     if (urlTempFile.startsWith("http://") || urlTempFile.startsWith("https://")) {
