@@ -71,17 +71,21 @@ export function getFileExtension(url: string): string {
 
 /**
  * Sube un File (desde FormData) a Vercel Blob y devuelve la URL pública.
+ * Convierte a Buffer para mayor compatibilidad en serverless (Vercel/Edge).
  */
 export async function uploadFileToBlob(file: File): Promise<string> {
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   if (!token) {
     throw new Error("BLOB_READ_WRITE_TOKEN no configurado. No se pueden subir adjuntos.");
   }
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const safeName = (file.name || "archivo").replace(/[^a-zA-Z0-9._-]/g, "_");
   const filename = `ticket-${Date.now()}-${safeName}`;
-  const { url } = await put(filename, file, {
+  const contentType = file.type || "application/octet-stream";
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const { url } = await put(filename, buffer, {
     access: "public",
-    contentType: file.type || "application/octet-stream",
+    contentType,
   });
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     throw new Error("URL de Blob no es absoluta");
