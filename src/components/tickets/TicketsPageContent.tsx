@@ -506,8 +506,6 @@ export function TicketsPageContent({
           </table>
         </div>
       </div>
-      {/* fin tabla desktop */}
-      </div>
 
       {notePopup && (
         <NotePopup
