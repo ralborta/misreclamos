@@ -52,7 +52,6 @@ async function getDashboardStats() {
     const urgentUnassigned = await prisma.ticket.count({
       where: {
         priority: "URGENT",
-        assignedToUserId: null,
         status: { notIn: ["RESOLVED", "CLOSED"] },
       },
     });
@@ -247,7 +246,7 @@ export default async function DashboardPage() {
           >
             <div>
               <h3 className="font-semibold text-orange-900">
-                Atención: {stats.urgentUnassigned} caso(s) urgente(s) sin asignar
+                Atención: {stats.urgentUnassigned} caso(s) urgente(s) activo(s)
               </h3>
               <p className="mt-1 text-sm text-orange-700">
                 Requieren atención inmediata
