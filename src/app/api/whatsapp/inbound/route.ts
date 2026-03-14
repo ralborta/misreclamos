@@ -327,9 +327,9 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
 
     if (shouldEscalate && solicitaAgente) {
       autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Reclamo: *${ticket.code}*. Te responderemos pronto.`;
-    } else if (isNewTicket) {
-      autoReplyMessage = `Hola! Hemos recibido tu mensaje. Reclamo: *${ticket.code}*. Un abogado lo revisará pronto.`;
     }
+    // El mensaje "Hemos recibido tu mensaje. Reclamo: *CODE*..." se envía al FINAL del flujo,
+    // cuando el bot envía una despedida (processOutgoingMessage), no al crear el ticket.
   }
 
   // Enviar respuesta automática si corresponde
@@ -368,6 +368,18 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     escalated: shouldEscalate,
     autoReplySent: !!autoReplyMessage,
   });
+}
+
+/** Detecta si el mensaje del bot parece una despedida / cierre del flujo (envío del código al final). */
+function isDespedida(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  const t = text.toLowerCase().trim();
+  return (
+    /un abogado (te )?contactar|nos pondremos en contacto|te responderemos pronto|abogado lo revisar/i.test(t) ||
+    /(gracias por (contactar|escribir|comunicarte)|cualquier cosa escribinos|estamos en contacto)/i.test(t) ||
+    /(despedida|hasta luego|que tengas buen|un abogado lo revisar)/i.test(t) ||
+    /(reclamo.*revisar|revisar[aá].*pronto)/i.test(t)
+  );
 }
 
 async function processOutgoingMessage({ eventName, data }: { eventName: string; data: any }) {
@@ -518,6 +530,38 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
       status: "WAITING_CUSTOMER", // El abogado envió un mensaje, ahora esperamos respuesta del cliente
     },
   });
+
+  // Si el bot acaba de enviar una despedida y aún no enviamos el mensaje con el código, enviarlo ahora (al final del flujo)
+  if (isDespedida(messageText)) {
+    const yaEnviado = await prisma.ticketMessage.findFirst({
+      where: {
+        ticketId: ticket.id,
+        from: "BOT",
+        text: { contains: "Hemos recibido tu mensaje" },
+      },
+    });
+    if (!yaEnviado && !customer.botPausedAt) {
+      const welcomeCodeMessage = `Hola! Hemos recibido tu mensaje. Reclamo: *${ticket.code}*. Un abogado lo revisará pronto.`;
+      try {
+        await sendWhatsAppMessage({
+          number: customer.phone,
+          message: welcomeCodeMessage,
+        });
+        await prisma.ticketMessage.create({
+          data: {
+            ticketId: ticket.id,
+            direction: "OUTBOUND",
+            from: "BOT",
+            text: welcomeCodeMessage,
+            rawPayload: { autoReply: true, atDespedida: true, timestamp: new Date().toISOString() },
+          },
+        });
+        console.log(`✅ Mensaje con código enviado al final del flujo (despedida) para ${ticket.code}`);
+      } catch (err) {
+        console.error("❌ Error al enviar mensaje con código tras despedida:", err);
+      }
+    }
+  }
 
   // Generar/actualizar resumen de la conversación con IA
   await updateTicketSummary(ticket.id);
