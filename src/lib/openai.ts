@@ -51,28 +51,25 @@ export async function summarizeConversation(
     .map((msg) => `[${msg.from}]: ${msg.text}`)
     .join('\n');
 
-  const prompt = `A continuación hay una conversación de la plataforma de reclamos legales "MisReclamos", entre un cliente, un bot asistente y en ocasiones un agente humano.
+  const prompt = `Sos un abogado que está leyendo una conversación entre un cliente y un bot de una plataforma de reclamos legales.
 
-Tu tarea: escribir un RESUMEN en prosa (2 a 4 oraciones completas) que explique claramente qué se entiende del diálogo. Debe leerse como una nota de un abogado, no como una lista.
+IMPORTANTE: Tu tarea es INTERPRETAR y SINTETIZAR, NO copiar ni citar lo que dijo el cliente.
 
-El resumen debe responder:
-- ¿Qué le ocurrió o qué consulta tiene el cliente?
-- ¿Contra quién o qué situación reclama (empleador, aseguradora, otra parte)?
-- ¿Hay datos relevantes mencionados (fecha del hecho, lugar, monto, tipo de contrato, etc.)?
-- ¿Hay algo pendiente o urgente?
+Escribí 2 a 4 oraciones en prosa que expliquen:
+1. Cuál es la situación legal del cliente (despido, accidente, trabajo en negro, deuda, etc.)
+2. Los hechos y datos más relevantes (fechas, montos, partes involucradas, tipo de relación laboral, etc.)
+3. Qué tipo de reclamo o acción legal correspondería, si se puede inferir.
 
-IGNORAR completamente:
-- Mensajes de aceptación de términos o privacidad.
-- Respuestas "Sí", "No", "Acepto", "Gracias".
-- Mensajes automáticos del bot (códigos de reclamo, bienvenidas, despedidas).
-- Texto técnico como "[Archivo adjunto]".
-
-Si hay muy poca información disponible, aclararlo brevemente: ej. "El cliente inició contacto pero aún no aportó detalles del caso."
+Reglas estrictas:
+- NO copies frases del cliente. INTERPRETÁ y reformulá con lenguaje profesional.
+- NO menciones el bot, los términos ni los mensajes automáticos.
+- Si faltan datos importantes, acláralos al final (ej: "Falta información sobre...").
+- Si hay poco contenido útil, describí brevemente lo que se sabe y señalá qué falta.
 
 Conversación:
 ${conversationText}
 
-Resumen del caso (prosa, como nota de abogado, 2-4 oraciones):`;
+Resumen interpretado (prosa profesional, 2-4 oraciones, NO citar diálogo):`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -81,7 +78,7 @@ Resumen del caso (prosa, como nota de abogado, 2-4 oraciones):`;
         {
           role: 'system',
           content:
-            'Eres un asistente jurídico de un estudio de reclamos. Redactás resúmenes en prosa (2-4 oraciones) explicando qué se entiende del diálogo: qué pasó, quién está involucrado, datos relevantes. Escribís como si fuera una nota interna de un abogado. Nunca copiás diálogo literal ni mensajes del bot.',
+            'Sos un abogado experto. Tu tarea es SINTETIZAR e INTERPRETAR conversaciones de reclamos legales en 2-4 oraciones profesionales. NUNCA copiás ni citás lo que dijo el cliente. Siempre reformulás con lenguaje jurídico claro. Destacás hechos, datos, tipo de reclamo y lo que falta saber.',
         },
         {
           role: 'user',
@@ -104,28 +101,23 @@ Resumen del caso (prosa, como nota de abogado, 2-4 oraciones):`;
   }
 }
 
-/** Fallback sin API: descripción genérica; nunca devolver texto crudo del cliente. */
+/** Fallback sin API: mensaje genérico, nunca citar el diálogo. */
 function fallbackSummary(messages: ConversationMessage[]): string {
-  // Intentar armar algo mínimo con mensajes del cliente que sean sustanciales
-  const clientTexts = messages
-    .filter((m) => m.from === 'CUSTOMER')
-    .map((m) => (m.text || '').trim())
-    .filter((t) => {
-      if (t.length < 10) return false;
-      if (EVENT_PLACEHOLDER.test(t)) return false;
-      if (ARCHIVO_ADJUNTO.test(t)) return false;
-      if (/^(sí|si|no|acepto|aceptamos|ok|okey)$/i.test(t)) return false;
-      if (/^(reclamo|hemos recibido|términos|privacidad)/i.test(t)) return false;
-      return true;
-    });
+  const hasClientContent = messages.some((m) => {
+    if (m.from !== 'CUSTOMER') return false;
+    const t = (m.text || '').trim();
+    return (
+      t.length >= 10 &&
+      !EVENT_PLACEHOLDER.test(t) &&
+      !ARCHIVO_ADJUNTO.test(t) &&
+      !/^(sí|si|no|acepto|aceptamos|ok|okey)$/i.test(t)
+    );
+  });
 
-  if (clientTexts.length === 0) {
-    return 'El cliente inició contacto pero aún no aportó detalles textuales del caso. Puede haber enviado adjuntos.';
+  if (!hasClientContent) {
+    return 'El cliente inició contacto pero aún no aportó detalles del caso. Pendiente de seguimiento.';
   }
-
-  // Unir hasta 2 mensajes en una oración contextualizada (no texto crudo)
-  const fragment = clientTexts.slice(0, 2).join(' ').slice(0, 300);
-  return `El cliente refiere: "${fragment}". Pendiente de ampliar detalles.`;
+  return 'Resumen pendiente de generación. Hacé clic en "Regenerar" para obtener el análisis del caso.';
 }
 
 /**
