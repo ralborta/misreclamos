@@ -38,13 +38,14 @@ function isSummaryValid(summary: string): boolean {
 export async function summarizeConversation(
   messages: ConversationMessage[]
 ): Promise<string> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY no configurada');
-  }
-
   const filtered = filterRealMessages(messages);
   if (filtered.length === 0) {
     return 'Sin contenido para resumir (solo adjuntos o mensajes de sistema).';
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('[OpenAI] OPENAI_API_KEY no configurada, usando fallback');
+    return fallbackSummary(filtered);
   }
 
   const conversationText = filtered

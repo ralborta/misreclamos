@@ -46,6 +46,7 @@ export async function POST(
     }
 
     console.log(`[Summary] Generando resumen para reclamo ${ticket.code} con ${ticket.messages.length} mensajes`);
+    console.log(`[Summary] OPENAI_API_KEY presente: ${!!process.env.OPENAI_API_KEY}`);
 
     // Formatear mensajes para OpenAI
     const conversationMessages = ticket.messages.map((msg) => ({
@@ -56,6 +57,7 @@ export async function POST(
 
     // Generar resumen con IA
     const aiSummary = await summarizeConversation(conversationMessages);
+    console.log(`[Summary] Resumen generado (${aiSummary.length} chars): ${aiSummary.slice(0, 120)}...`);
 
     let legalType: string | null = ticket.legalType;
     let priority = ticket.priority;
