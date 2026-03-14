@@ -11,20 +11,29 @@ export interface ConversationMessage {
 }
 
 const EVENT_PLACEHOLDER = /^_event_(document|image|video|audio)__/i;
+const ARCHIVO_ADJUNTO = /^\[Archivo adjunto\]$/i;
 
-/** Excluye mensajes que son solo placeholders de BuilderBot (_event_document__..., etc.). */
+/** Excluye mensajes que no son contenido resumible (placeholders, "[Archivo adjunto]", vacíos). */
 function filterRealMessages(messages: ConversationMessage[]): ConversationMessage[] {
   return messages.filter((m) => {
     const t = (m.text || '').trim();
     if (!t) return false;
     if (EVENT_PLACEHOLDER.test(t)) return false;
+    if (ARCHIVO_ADJUNTO.test(t)) return false;
     return true;
   });
 }
 
+function isSummaryValid(summary: string): boolean {
+  const s = summary.trim();
+  if (!s || s.length < 10) return false;
+  if (EVENT_PLACEHOLDER.test(s)) return false;
+  if (ARCHIVO_ADJUNTO.test(s)) return false;
+  return true;
+}
+
 /**
- * Genera un resumen breve del CASO (reclamo), no un transcript.
- * Solo: tipo de caso, qué pasó, datos relevantes. Sin diálogo bot/cliente ni preguntas de términos.
+ * Genera un resumen con visión jurídica: puntos importantes de la interacción, claro y conciso.
  */
 export async function summarizeConversation(
   messages: ConversationMessage[]
@@ -35,30 +44,32 @@ export async function summarizeConversation(
 
   const filtered = filterRealMessages(messages);
   if (filtered.length === 0) {
-    return 'Sin mensajes para resumir.';
+    return 'Sin contenido para resumir (solo adjuntos o mensajes de sistema).';
   }
 
   const conversationText = filtered
     .map((msg) => `[${msg.from}]: ${msg.text}`)
     .join('\n');
 
-  const prompt = `Esta es una conversación de un estudio jurídico / reclamos (MisReclamos). El cliente escribe, el bot hace preguntas (términos, datos, etc.).
+  const prompt = `Conversación de un estudio jurídico / plataforma de reclamos (MisReclamos). Hay mensajes del cliente, del bot y a veces de un agente.
 
-Escribí un RESUMEN del CASO en 1 a 3 oraciones cortas. Incluí SOLO:
-- De qué se trata el reclamo o consulta (ej: agresión del jefe, despido, accidente).
-- Quién está involucrado si se menciona (ej: empleador, compañía de seguro).
-- Algún dato clave si es relevante (fecha, lugar, monto).
+Objetivo: redactar un RESUMEN con visión jurídica que destaque lo importante de la interacción.
 
-NO incluyas en el resumen:
-- Preguntas del bot (términos, privacidad, "¿Aceptás?", etc.).
-- Respuestas cortas del cliente como "Sí", "No", "Acepto".
-- Mensajes automáticos tipo "Hemos recibido tu mensaje" o códigos de reclamo.
-- Diálogo literal; solo la esencia del caso.
+Incluí de forma CLARA y CONCISA (1 a 3 oraciones):
+- Puntos importantes del caso: tipo de reclamo o consulta (despido, accidente, agresión, impago, etc.).
+- Partes o hechos relevantes si se mencionan (empleador, aseguradora, fechas, montos, lugar).
+- Cualquier dato que sea jurídicamente relevante para el seguimiento del caso.
+
+NO incluyas:
+- Preguntas del bot (términos, privacidad, "¿Aceptás?").
+- Respuestas "Sí"/"No"/"Acepto".
+- Mensajes automáticos ni códigos de reclamo.
+- Diálogo literal; solo los puntos importantes con mirada jurídica.
 
 Conversación:
 ${conversationText}
 
-Resumen del caso (solo texto, 1-3 oraciones):`;
+Resumen (puntos importantes, visión jurídica, 1-3 oraciones):`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -67,7 +78,7 @@ Resumen del caso (solo texto, 1-3 oraciones):`;
         {
           role: 'system',
           content:
-            'Generas resúmenes de casos legales/reclamos. Escribes solo la esencia del reclamo en 1-3 oraciones. No incluyes diálogo, preguntas del bot ni respuestas Sí/No.',
+            'Eres un asistente jurídico. Redactás resúmenes de conversaciones de reclamos: extraés los puntos importantes con visión jurídica, de forma clara y concisa. No incluís diálogo literal ni preguntas de términos.',
         },
         {
           role: 'user',
@@ -75,11 +86,11 @@ Resumen del caso (solo texto, 1-3 oraciones):`;
         },
       ],
       temperature: 0.3,
-      max_tokens: 200,
+      max_tokens: 220,
     });
 
     const summary = response.choices[0]?.message?.content?.trim() || '';
-    if (summary && summary.length > 5 && !EVENT_PLACEHOLDER.test(summary)) {
+    if (isSummaryValid(summary)) {
       console.log('[OpenAI] Resumen generado:', summary.slice(0, 80) + '...');
       return summary;
     }
@@ -90,18 +101,19 @@ Resumen del caso (solo texto, 1-3 oraciones):`;
   }
 }
 
-/** Fallback sin API: extrae el primer mensaje sustancial del cliente. */
+/** Fallback sin API: primer mensaje sustancial del cliente. Nunca devolver "[Archivo adjunto]". */
 function fallbackSummary(messages: ConversationMessage[]): string {
   const fromClient = messages.filter((m) => m.from === 'CUSTOMER');
   for (const m of fromClient) {
     const t = (m.text || '').trim();
-    if (t.length < 5) continue;
+    if (t.length < 8) continue;
     if (EVENT_PLACEHOLDER.test(t)) continue;
+    if (ARCHIVO_ADJUNTO.test(t)) continue;
     if (/^(sí|si|no|acepto|aceptamos)$/i.test(t)) continue;
     if (/reclamo|recibido|términos|privacidad/i.test(t) && t.length < 80) continue;
-    return t.length > 200 ? t.slice(0, 197) + '...' : t;
+    return t.length > 220 ? t.slice(0, 217) + '...' : t;
   }
-  return 'Sin resumen disponible.';
+  return 'Sin resumen disponible. Cliente envió solo adjuntos o respuestas breves.';
 }
 
 /**
