@@ -10,6 +10,7 @@ export async function getTicketsAndCounts() {
       status: true,
       priority: true,
       legalType: true,
+      caseNotes: true,
       lastMessageAt: true,
       createdAt: true,
       customer: {

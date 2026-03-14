@@ -20,6 +20,7 @@ const updateSchema = z.object({
   priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional(),
   assignedToUserId: z.string().optional().nullable(),
   legalType: z.string().optional().nullable(),
+  caseNotes: z.string().optional().nullable(),
 });
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
