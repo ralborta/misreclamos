@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { statusLabels } from "@/lib/tickets";
@@ -15,10 +15,107 @@ interface Ticket {
   status: string;
   priority: string;
   legalType?: string | null;
+  caseNotes?: string | null;
   lastMessageAt: string;
   createdAt: string;
   customer?: { name: string | null; phone: string } | null;
   assignedTo?: { name: string } | null;
+}
+
+// ─── Popup de Nota ────────────────────────────────────────────────────────────
+function NotePopup({
+  ticketId,
+  ticketCode,
+  initialNote,
+  onClose,
+  onSaved,
+}: {
+  ticketId: string;
+  ticketCode: string;
+  initialNote: string | null | undefined;
+  onClose: () => void;
+  onSaved: (note: string) => void;
+}) {
+  const [text, setText] = useState(initialNote || "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/tickets/${ticketId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseNotes: text }),
+      });
+      if (res.ok) {
+        onSaved(text);
+        setSaved(true);
+        setTimeout(() => { setSaved(false); onClose(); }, 900);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(15,23,42,0.45)", backdropFilter: "blur(2px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-amber-50">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📝</span>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Nota interna</p>
+              <p className="text-xs text-slate-500">{ticketCode}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="px-5 py-4">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Escribí acá las notas internas del abogado sobre este caso..."
+            rows={6}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition leading-relaxed"
+          />
+          <p className="mt-1.5 text-xs text-slate-400">Solo visible para el equipo interno. Presioná Esc para cerrar.</p>
+        </div>
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50">
+          <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 transition">
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || saved}
+            className={`rounded-lg px-5 py-2 text-sm font-semibold text-white shadow-sm transition flex items-center gap-2 ${saved ? "bg-emerald-500" : "bg-amber-500 hover:bg-amber-600"} disabled:opacity-70`}
+          >
+            {saved ? "✓ Guardado" : saving ? "⏳ Guardando..." : "Guardar nota"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 type StatusFilterValue = "ALL" | "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "URGENT" | "RESOLVED" | "CLOSED";
@@ -44,6 +141,8 @@ export function TicketsPageContent({
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>(initialStatusFilter ?? "ALL");
+  const [notePopup, setNotePopup] = useState<{ ticketId: string; ticketCode: string; note: string | null | undefined } | null>(null);
+  const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
   const [tipoFilter, setTipoFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"lastMessageAt" | "createdAt" | "code">("lastMessageAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -240,12 +339,13 @@ export function TicketsPageContent({
                     onClick={() => toggleSort("lastMessageAt")}
                   />
                 </th>
+                <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-slate-700">Nota</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredTickets.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                     No hay casos que coincidan con los filtros.
                   </td>
                 </tr>
@@ -253,6 +353,8 @@ export function TicketsPageContent({
                 filteredTickets.map((ticket) => {
                   const last = formatDateTime(ticket.lastMessageAt);
                   const isResolved = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
+                  const currentNote = localNotes[ticket.id] !== undefined ? localNotes[ticket.id] : ticket.caseNotes;
+                  const hasNote = !!currentNote;
                   return (
                     <tr
                       key={ticket.id}
@@ -303,6 +405,23 @@ export function TicketsPageContent({
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
                         {last.date} {last.time}
                       </td>
+                      <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          title={hasNote ? "Ver / editar nota" : "Agregar nota"}
+                          onClick={() => setNotePopup({ ticketId: ticket.id, ticketCode: ticket.code, note: currentNote })}
+                          className="rounded-lg p-1.5 transition hover:bg-amber-50"
+                        >
+                          {hasNote ? (
+                            <svg className="h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                            </svg>
+                          ) : (
+                            <svg className="h-4 w-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+                            </svg>
+                          )}
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
@@ -311,6 +430,19 @@ export function TicketsPageContent({
           </table>
         </div>
       </div>
+
+      {notePopup && (
+        <NotePopup
+          ticketId={notePopup.ticketId}
+          ticketCode={notePopup.ticketCode}
+          initialNote={notePopup.note}
+          onClose={() => setNotePopup(null)}
+          onSaved={(note) => {
+            setLocalNotes((prev) => ({ ...prev, [notePopup.ticketId]: note }));
+            setNotePopup(null);
+          }}
+        />
+      )}
     </div>
   );
 }
