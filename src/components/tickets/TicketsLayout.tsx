@@ -1,30 +1,49 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { CaseTypesNavLinks } from "@/components/casos/CaseTypesNavLinks";
 import { SidebarIcons, type SidebarIconName } from "@/components/tickets/SidebarIcons";
 
-const SIDEBAR_WIDTH = "17rem";
-
 const NAV_ACTIVE_BG = "#375A7F";
 
 export function TicketsLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#f3f8fd]">
-      <ReclamosSidebar />
-      <main
-        className="min-h-screen p-6 lg:p-8 bg-slate-50 rounded-l-2xl shadow-sm"
-        style={{ marginLeft: SIDEBAR_WIDTH }}
-      >
+      {/* Overlay backdrop - solo mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <ReclamosSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      <main className="min-h-screen p-4 sm:p-6 lg:p-8 bg-slate-50 md:rounded-l-2xl shadow-sm md:ml-[17rem]">
+        {/* Botón hamburguesa - solo mobile */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="mb-4 flex items-center gap-2 rounded-lg bg-[#2C3E50] px-3 py-2 text-white shadow-sm md:hidden"
+          aria-label="Abrir menú"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span className="text-sm font-medium">Menú</span>
+        </button>
         {children}
       </main>
     </div>
   );
 }
 
-function ReclamosSidebar() {
+function ReclamosSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -35,12 +54,23 @@ function ReclamosSidebar() {
 
   return (
     <aside
-      className="fixed left-0 top-0 bottom-0 z-30 flex flex-col shadow-lg min-w-[17rem] w-[17rem] flex-shrink-0"
-      style={{ width: SIDEBAR_WIDTH }}
+      className={`fixed left-0 top-0 bottom-0 z-40 flex flex-col shadow-lg w-[17rem] flex-shrink-0 transition-transform duration-300 ease-in-out ${
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      }`}
     >
       {/* Barra superior: logo + nombre - fondo oscuro */}
-      <div className="bg-[#2C3E50] px-4 py-5 flex-shrink-0">
-        <Link href="/tickets" className="flex flex-col items-center gap-2 hover:opacity-95 transition">
+      <div className="bg-[#2C3E50] px-4 py-5 flex-shrink-0 relative">
+        {/* Botón cerrar - solo mobile */}
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 flex items-center justify-center rounded-lg p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition md:hidden"
+          aria-label="Cerrar menú"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <Link href="/tickets" className="flex flex-col items-center gap-2 hover:opacity-95 transition" onClick={onClose}>
           <img
             src="/Logo-MisReclamos.png"
             alt="Mis Reclamos"
@@ -63,31 +93,31 @@ function ReclamosSidebar() {
       {/* Navegación: iconos + texto + chevron, ítem activo #375A7F */}
       <nav className="flex-1 min-h-0 space-y-0 px-3 py-4 text-sm overflow-y-auto overflow-x-hidden bg-[#2C3E50]">
         <SectionTitle>Inicio</SectionTitle>
-        <NavLink label="Dashboard" href="/dashboard" icon="home" />
-        <NavLink label="Todos los Casos" href="/tickets" icon="folder" />
-        <NavLink label="Legado" href="/legado" icon="briefcase" />
+        <NavLink label="Dashboard" href="/dashboard" icon="home" onNavigate={onClose} />
+        <NavLink label="Todos los Casos" href="/tickets" icon="folder" onNavigate={onClose} />
+        <NavLink label="Legado" href="/legado" icon="briefcase" onNavigate={onClose} />
 
         <div className="my-2 border-t border-white/10" />
 
         <SectionTitle>Por Estado</SectionTitle>
-        <NavLink label="Abiertos" href="/tickets/abiertos" icon="check" iconColor="emerald" />
-        <NavLink label="En Progreso" href="/tickets/en-progreso" icon="clock" iconColor="orange" />
-        <NavLink label="Esperando Cliente" href="/tickets/esperando-cliente" icon="chat" iconColor="sky" />
-        <NavLink label="Resueltos" href="/tickets/resueltos" icon="check" iconColor="emerald" />
-        <NavLink label="Cerrados" href="/tickets/cerrados" icon="folder" />
+        <NavLink label="Abiertos" href="/tickets/abiertos" icon="check" iconColor="emerald" onNavigate={onClose} />
+        <NavLink label="En Progreso" href="/tickets/en-progreso" icon="clock" iconColor="orange" onNavigate={onClose} />
+        <NavLink label="Esperando Cliente" href="/tickets/esperando-cliente" icon="chat" iconColor="sky" onNavigate={onClose} />
+        <NavLink label="Resueltos" href="/tickets/resueltos" icon="check" iconColor="emerald" onNavigate={onClose} />
+        <NavLink label="Cerrados" href="/tickets/cerrados" icon="folder" onNavigate={onClose} />
 
         <div className="my-2 border-t border-white/10" />
 
         <SectionTitle>Por tipo de caso</SectionTitle>
-        <CaseTypesNavLinks />
+        <CaseTypesNavLinks onNavigate={onClose} />
 
         <div className="my-2 border-t border-white/10" />
 
         <SectionTitle>Gestión</SectionTitle>
-        <NavLink label="Casos" href="/casos" icon="folder" />
-        <NavLink label="Abogados" href="/agentes" icon="users" />
-        <NavLink label="Clientes" href="/clientes" icon="users" />
-        <NavLink label="Configuración" href="/configuracion" icon="settings" />
+        <NavLink label="Casos" href="/casos" icon="folder" onNavigate={onClose} />
+        <NavLink label="Abogados" href="/agentes" icon="users" onNavigate={onClose} />
+        <NavLink label="Clientes" href="/clientes" icon="users" onNavigate={onClose} />
+        <NavLink label="Configuración" href="/configuracion" icon="settings" onNavigate={onClose} />
       </nav>
 
       {/* Pie */}
@@ -116,11 +146,13 @@ function NavLink({
   label,
   icon,
   iconColor,
+  onNavigate,
 }: {
   href: string;
   label: string;
   icon: Exclude<SidebarIconName, "chevronRight">;
   iconColor?: "emerald" | "orange" | "sky";
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const active = pathname === href || (href !== "/tickets" && pathname.startsWith(href));
@@ -128,6 +160,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      onClick={onNavigate}
       className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out ${!active ? "hover:bg-white/10" : ""}`}
       style={active ? { backgroundColor: NAV_ACTIVE_BG } : undefined}
     >

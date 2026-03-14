@@ -242,7 +242,7 @@ export default async function DashboardPage() {
         {stats.urgentUnassigned > 0 && (
           <Link
             href="/tickets/urgentes"
-            className="mb-8 flex items-center justify-between rounded-xl border border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 p-5 shadow-sm transition hover:shadow-md"
+            className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 p-5 shadow-sm transition hover:shadow-md"
           >
             <div>
               <h3 className="font-semibold text-orange-900">
@@ -252,7 +252,7 @@ export default async function DashboardPage() {
                 Requieren atención inmediata
               </p>
             </div>
-            <span className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
+            <span className="self-start sm:self-auto rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600">
               Ver urgentes
             </span>
           </Link>

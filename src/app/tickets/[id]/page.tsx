@@ -52,23 +52,22 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
   const phone = ticket.customer?.phone ? formatPhone(ticket.customer.phone) : "—";
 
   return (
-    <div className="min-h-screen p-6 bg-slate-50/50">
+    <div className="min-h-screen p-3 sm:p-6 bg-slate-50/50">
       <TicketLiveRefresh />
       <div className="mx-auto flex max-w-6xl flex-col gap-4">
-        {/* Header estilo diseño: volver, TICKET #, cliente + tipo + teléfono, botones */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <Link href="/tickets" className="text-sm text-[#2196F3] hover:underline">
               ← Volver a tickets
             </Link>
-            <h1 className="mt-1 text-xl font-bold text-slate-900">TICKET #{ticket.code}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <h1 className="mt-1 text-lg sm:text-xl font-bold text-slate-900 truncate">TICKET #{ticket.code}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-sm font-semibold text-slate-800">{contactName}</span>
               <CaseTypeIcon legalType={ticket.legalType} />
               <span className="text-sm text-slate-600">{ticket.legalType || "Sin caso"}</span>
-              <span className="text-slate-400">· · ·</span>
             </div>
-            <p className="mt-1 text-xs text-slate-500">{phone}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{phone}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusActions ticketId={ticket.id} currentStatus={ticket.status as TicketStatus} variant="header" />
@@ -83,15 +82,6 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
               className="inline-flex items-center gap-2 rounded-lg bg-[#2196F3] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1976D2] transition-colors"
             >
               Responder
-            </a>
-            <a
-              href="#conversacion"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#2196F3] text-white shadow-sm hover:bg-[#1976D2] transition-colors"
-              aria-label="Ir a conversación"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
             </a>
           </div>
         </div>

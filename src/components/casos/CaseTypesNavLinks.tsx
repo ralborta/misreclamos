@@ -23,7 +23,7 @@ const colorToBgClass: Record<string, string> = {
   "teal-500": "bg-teal-500",
 };
 
-export function CaseTypesNavLinks() {
+export function CaseTypesNavLinks({ onNavigate }: { onNavigate?: () => void } = {}) {
   const pathname = usePathname();
   const [casos, setCasos] = useState<CaseTypeNav[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +56,7 @@ export function CaseTypesNavLinks() {
           <Link
             key={c.id}
             href={href}
+            onClick={onNavigate}
             className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-out ${
               active ? "" : "hover:bg-white/10"
             }`}

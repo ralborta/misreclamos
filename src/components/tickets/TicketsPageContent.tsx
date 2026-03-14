@@ -323,8 +323,80 @@ export function TicketsPageContent({
         </button>
       </div>
 
-      {/* Tabla: ID, ASUNTO, CLIENTE, TIPO, ESTADO, ASIGNADO, Última + */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      {/* Vista tarjetas - solo mobile */}
+      <div className="md:hidden space-y-2">
+        {filteredTickets.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500 shadow-sm">
+            No hay casos que coincidan con los filtros.
+          </div>
+        ) : (
+          filteredTickets.map((ticket) => {
+            const last = formatDateTime(ticket.lastMessageAt);
+            const isResolved = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
+            const currentNote = localNotes[ticket.id] !== undefined ? localNotes[ticket.id] : ticket.caseNotes;
+            const hasNote = !!currentNote;
+            return (
+              <div
+                key={ticket.id}
+                className="rounded-xl border border-slate-200 bg-white shadow-sm p-4 cursor-pointer active:bg-slate-50 transition-colors"
+                onClick={() => router.push(`/tickets/${ticket.id}`)}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {isResolved && (
+                        <span className="shrink-0 text-emerald-500">
+                          <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                      <p className="text-xs font-medium text-slate-400">{ticket.code}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">
+                      {ticket.title || ticket.code}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">{ticket.contactName || "Sin nombre"} · {ticket.customer?.name || ""}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(ticket.status as TicketStatus)}`}>
+                      {statusLabels[ticket.status as TicketStatus]}
+                    </span>
+                    <span className={tipoBadgeClass(ticket.legalType)}>
+                      {ticket.legalType || "Sin caso"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                  <div className="text-xs text-slate-500">
+                    <span className="font-medium text-slate-600">{ticket.assignedTo?.name || "Sin asignar"}</span>
+                    <span className="mx-1">·</span>
+                    {last.date} {last.time}
+                  </div>
+                  <button
+                    title={hasNote ? "Ver / editar nota" : "Agregar nota"}
+                    onClick={(e) => { e.stopPropagation(); setNotePopup({ ticketId: ticket.id, ticketCode: ticket.code, note: currentNote }); }}
+                    className="rounded-lg p-1 transition hover:bg-teal-50"
+                  >
+                    {hasNote ? (
+                      <svg className="h-4 w-4 text-teal-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712ZM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4Z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Tabla: solo desktop */}
+      <div className="hidden md:block overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
@@ -433,6 +505,8 @@ export function TicketsPageContent({
             </tbody>
           </table>
         </div>
+      </div>
+      {/* fin tabla desktop */}
       </div>
 
       {notePopup && (
