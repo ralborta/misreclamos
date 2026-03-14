@@ -10,6 +10,18 @@ export interface ConversationMessage {
   createdAt: Date;
 }
 
+const EVENT_PLACEHOLDER = /^_event_(document|image|video|audio)__/i;
+
+/** Excluye mensajes que son solo placeholders de BuilderBot (_event_document__..., etc.). */
+function filterRealMessages(messages: ConversationMessage[]): ConversationMessage[] {
+  return messages.filter((m) => {
+    const t = (m.text || '').trim();
+    if (!t) return false;
+    if (EVENT_PLACEHOLDER.test(t)) return false;
+    return true;
+  });
+}
+
 /**
  * Genera un resumen breve del CASO (reclamo), no un transcript.
  * Solo: tipo de caso, qué pasó, datos relevantes. Sin diálogo bot/cliente ni preguntas de términos.
@@ -21,11 +33,12 @@ export async function summarizeConversation(
     throw new Error('OPENAI_API_KEY no configurada');
   }
 
-  if (messages.length === 0) {
-    return 'Sin mensajes';
+  const filtered = filterRealMessages(messages);
+  if (filtered.length === 0) {
+    return 'Sin mensajes para resumir.';
   }
 
-  const conversationText = messages
+  const conversationText = filtered
     .map((msg) => `[${msg.from}]: ${msg.text}`)
     .join('\n');
 
@@ -66,23 +79,24 @@ Resumen del caso (solo texto, 1-3 oraciones):`;
     });
 
     const summary = response.choices[0]?.message?.content?.trim() || '';
-    if (summary && summary.length > 5) {
+    if (summary && summary.length > 5 && !EVENT_PLACEHOLDER.test(summary)) {
       console.log('[OpenAI] Resumen generado:', summary.slice(0, 80) + '...');
       return summary;
     }
-    return fallbackSummary(messages);
+    return fallbackSummary(filtered);
   } catch (error: any) {
     console.error('[OpenAI] Error al resumir:', error.message);
-    return fallbackSummary(messages);
+    return fallbackSummary(filtered);
   }
 }
 
-/** Fallback sin API: extrae el primer mensaje sustancial del cliente, sin unir todo con " | ". */
+/** Fallback sin API: extrae el primer mensaje sustancial del cliente. */
 function fallbackSummary(messages: ConversationMessage[]): string {
   const fromClient = messages.filter((m) => m.from === 'CUSTOMER');
   for (const m of fromClient) {
     const t = (m.text || '').trim();
     if (t.length < 5) continue;
+    if (EVENT_PLACEHOLDER.test(t)) continue;
     if (/^(sí|si|no|acepto|aceptamos)$/i.test(t)) continue;
     if (/reclamo|recibido|términos|privacidad/i.test(t) && t.length < 80) continue;
     return t.length > 200 ? t.slice(0, 197) + '...' : t;

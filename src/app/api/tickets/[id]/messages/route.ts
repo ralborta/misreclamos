@@ -125,6 +125,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       },
     });
 
+    // Si el agente envió desde el backoffice, puede que el webhook ya haya guardado el mismo mensaje como BOT; borrar ese duplicado
+    if (direction === "OUTBOUND" && from === "HUMAN") {
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000);
+      const normalized = (messageText || "").trim().replace(/\s+/g, " ");
+      const botDuplicates = await prisma.ticketMessage.findMany({
+        where: {
+          ticketId: id,
+          from: "BOT",
+          direction: "OUTBOUND",
+          createdAt: { gte: twoMinAgo },
+          id: { not: message.id },
+        },
+      });
+      for (const botMsg of botDuplicates) {
+        const botText = (botMsg.text || "").trim().replace(/\s+/g, " ");
+        if (botText === normalized || botText.includes(normalized) || normalized.includes(botText)) {
+          await prisma.ticketMessage.delete({ where: { id: botMsg.id } });
+          console.log(`[Messages] Eliminado duplicado Bot (mismo texto que Agente) id=${botMsg.id}`);
+          break;
+        }
+      }
+    }
+
     await prisma.ticket.update({
       where: { id },
       data: {
