@@ -462,30 +462,30 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
     return NextResponse.json({ ok: true, message: "No hay ticket activo" });
   }
 
-  // Verificar si ya existe un mensaje similar reciente (para evitar duplicados cuando se envía desde la plataforma)
-  // Buscar mensajes OUTBOUND del mismo ticket con el mismo texto en los últimos 2 minutos
+  // Evitar duplicado: si el agente envió desde el backoffice, ya guardamos HUMAN; no guardar de nuevo como BOT
   const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-  const existingMessage = await prisma.ticketMessage.findFirst({
+  const normalizedIncoming = (messageText || "[Archivo adjunto]").trim().replace(/\s+/g, " ");
+  const recentOutbound = await prisma.ticketMessage.findMany({
     where: {
       ticketId: ticket.id,
       direction: "OUTBOUND",
-      text: messageText || "[Archivo adjunto]",
-      createdAt: {
-        gte: twoMinutesAgo,
-      },
+      createdAt: { gte: twoMinutesAgo },
     },
     orderBy: { createdAt: "desc" },
+    take: 5,
   });
-
-  if (existingMessage) {
-    console.log(`ℹ️ Mensaje saliente ya existe (probablemente enviado desde la plataforma), ignorando duplicado`);
-    return NextResponse.json({
-      ok: true,
-      ticketId: ticket.id,
-      ticketCode: ticket.code,
-      duplicate: true,
-      existingMessageId: existingMessage.id,
-    });
+  for (const msg of recentOutbound) {
+    const existingNormalized = (msg.text || "").trim().replace(/\s+/g, " ");
+    if (existingNormalized === normalizedIncoming || existingNormalized.includes(normalizedIncoming) || normalizedIncoming.includes(existingNormalized)) {
+      console.log(`ℹ️ Mensaje saliente ya existe (enviado desde backoffice como Agente), no duplicar como Bot`);
+      return NextResponse.json({
+        ok: true,
+        ticketId: ticket.id,
+        ticketCode: ticket.code,
+        duplicate: true,
+        existingMessageId: msg.id,
+      });
+    }
   }
 
   // Generar messageId único

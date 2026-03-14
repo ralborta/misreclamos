@@ -11,7 +11,8 @@ export interface ConversationMessage {
 }
 
 /**
- * Resume una conversación completa en 2-3 líneas usando OpenAI
+ * Genera un resumen breve del CASO (reclamo), no un transcript.
+ * Solo: tipo de caso, qué pasó, datos relevantes. Sin diálogo bot/cliente ni preguntas de términos.
  */
 export async function summarizeConversation(
   messages: ConversationMessage[]
@@ -24,47 +25,69 @@ export async function summarizeConversation(
     return 'Sin mensajes';
   }
 
-  // Formatear la conversación para OpenAI
   const conversationText = messages
     .map((msg) => `[${msg.from}]: ${msg.text}`)
     .join('\n');
 
-  const prompt = `Eres un asistente de soporte técnico. Resume la siguiente conversación en máximo 2-3 líneas, enfocándote en:
-1. El problema principal del cliente
-2. Información clave mencionada
-3. Urgencia o impacto
+  const prompt = `Esta es una conversación de un estudio jurídico / reclamos (MisReclamos). El cliente escribe, el bot hace preguntas (términos, datos, etc.).
+
+Escribí un RESUMEN del CASO en 1 a 3 oraciones cortas. Incluí SOLO:
+- De qué se trata el reclamo o consulta (ej: agresión del jefe, despido, accidente).
+- Quién está involucrado si se menciona (ej: empleador, compañía de seguro).
+- Algún dato clave si es relevante (fecha, lugar, monto).
+
+NO incluyas en el resumen:
+- Preguntas del bot (términos, privacidad, "¿Aceptás?", etc.).
+- Respuestas cortas del cliente como "Sí", "No", "Acepto".
+- Mensajes automáticos tipo "Hemos recibido tu mensaje" o códigos de reclamo.
+- Diálogo literal; solo la esencia del caso.
 
 Conversación:
 ${conversationText}
 
-Resumen conciso:`;
+Resumen del caso (solo texto, 1-3 oraciones):`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Modelo más económico y rápido
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
           content:
-            'Eres un asistente experto en resumir conversaciones de soporte técnico de forma concisa y clara.',
+            'Generas resúmenes de casos legales/reclamos. Escribes solo la esencia del reclamo en 1-3 oraciones. No incluyes diálogo, preguntas del bot ni respuestas Sí/No.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.3, // Más determinístico
-      max_tokens: 150, // Límite para mantenerlo conciso
+      temperature: 0.3,
+      max_tokens: 200,
     });
 
-    const summary = response.choices[0]?.message?.content?.trim() || 'Error al generar resumen';
-    console.log('[OpenAI] Resumen generado:', summary);
-    return summary;
+    const summary = response.choices[0]?.message?.content?.trim() || '';
+    if (summary && summary.length > 5) {
+      console.log('[OpenAI] Resumen generado:', summary.slice(0, 80) + '...');
+      return summary;
+    }
+    return fallbackSummary(messages);
   } catch (error: any) {
     console.error('[OpenAI] Error al resumir:', error.message);
-    // Fallback: tomar los primeros mensajes
-    return messages.slice(0, 3).map((m) => m.text).join(' | ');
+    return fallbackSummary(messages);
   }
+}
+
+/** Fallback sin API: extrae el primer mensaje sustancial del cliente, sin unir todo con " | ". */
+function fallbackSummary(messages: ConversationMessage[]): string {
+  const fromClient = messages.filter((m) => m.from === 'CUSTOMER');
+  for (const m of fromClient) {
+    const t = (m.text || '').trim();
+    if (t.length < 5) continue;
+    if (/^(sí|si|no|acepto|aceptamos)$/i.test(t)) continue;
+    if (/reclamo|recibido|términos|privacidad/i.test(t) && t.length < 80) continue;
+    return t.length > 200 ? t.slice(0, 197) + '...' : t;
+  }
+  return 'Sin resumen disponible.';
 }
 
 /**
