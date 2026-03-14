@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { generateTicketCode } from "@/lib/tickets";
 import { uploadToBlob, getFileExtension } from "@/lib/blob";
-import { summarizeConversation, classifyLegalType } from "@/lib/openai";
+import { summarizeConversation, classifyLegalType, transcribeAudio } from "@/lib/openai";
 // Using string literals instead of Prisma enums for compatibility
 
 // Schema para el formato de BuilderBot.cloud (permisivo: from puede venir como número, body puede faltar)
@@ -172,29 +172,27 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     }
   }
 
-  // --- TRANSCRIPCIÓN DE NOTAS DE VOZ desde BuilderBot ---
-  // BuilderBot ya transcribe el audio internamente. La transcripción puede venir en
-  // distintos campos del payload. Si no viene, mostramos [Nota de voz] como placeholder.
+  // --- TRANSCRIPCIÓN DE NOTAS DE VOZ con Whisper ---
+  // BuilderBot NO reenvía la transcripción en el webhook (solo body/_event_voice_note__ + urlTempFile).
+  // Usamos OpenAI Whisper para transcribir el audio nosotros.
   if ((isVoiceNote || isAudioEvent) && !messageText) {
-    // Log del payload completo para identificar el campo exacto de transcripción
-    console.log(`🎤 [VoiceNote] Payload completo de data:`, JSON.stringify(data, null, 2));
+    // Buscar URL del audio: primero en attachments procesados, luego en urlTempFile directo
+    const audioAttachment = processedAttachments.find((a) => a.type === "audio");
+    const audioUrl = audioAttachment?.url || (urlTempFile && isAbsoluteUrl(urlTempFile) ? urlTempFile : null);
 
-    // Intentar extraer transcripción de los campos más comunes que BuilderBot puede enviar
-    const transcription: string =
-      data.caption ||
-      data.transcription ||
-      data.voiceTranscription ||
-      data.voice_transcription ||
-      data.text ||
-      data.transcript ||
-      "";
-
-    if (transcription && transcription.trim()) {
-      messageText = transcription.trim();
-      console.log(`✅ Transcripción de BuilderBot encontrada: "${messageText.slice(0, 100)}"`);
+    if (audioUrl) {
+      console.log(`🎤 Nota de voz detectada. Transcribiendo con Whisper: ${audioUrl}`);
+      const transcription = await transcribeAudio(audioUrl);
+      if (transcription) {
+        messageText = transcription;
+        console.log(`✅ Transcripción Whisper: "${messageText.slice(0, 100)}"`);
+      } else {
+        messageText = "[Nota de voz - no se pudo transcribir]";
+        console.warn(`⚠️ Whisper no pudo transcribir la nota de voz`);
+      }
     } else {
       messageText = "[Nota de voz]";
-      console.warn(`⚠️ No se encontró transcripción de BuilderBot en el payload. Campos disponibles: ${Object.keys(data).join(", ")}`);
+      console.warn(`⚠️ Nota de voz sin URL de audio disponible`);
     }
   }
 
