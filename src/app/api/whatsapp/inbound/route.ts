@@ -151,13 +151,13 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   if (urlTempFile && processedAttachments.length === 0) {
     console.log(`📎 Archivo temporal detectado: ${urlTempFile}`);
     
-    // Validar que sea URL absoluta
     if (!urlTempFile.startsWith("http://") && !urlTempFile.startsWith("https://")) {
       console.error(`❌ urlTempFile no es URL absoluta: ${urlTempFile}`);
     } else {
       try {
         const permanentUrl = await uploadToBlob(urlTempFile, `media-${Date.now()}.${getFileExtension(urlTempFile)}`);
-        const fileType = getFileTypeFromUrl(urlTempFile);
+        // Si es nota de voz, forzar tipo "audio" sin importar la extensión de la URL
+        const fileType = (isVoiceNote || isAudioEvent) ? "audio" : getFileTypeFromUrl(urlTempFile);
         
         processedAttachments.push({
           url: permanentUrl,
@@ -165,7 +165,7 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
           name: (isVoiceNote || isAudioEvent || fileType === "audio") ? "Nota de voz" : "Archivo multimedia",
         });
         
-        console.log(`✅ Archivo subido a Blob: ${permanentUrl}`);
+        console.log(`✅ Archivo subido a Blob: ${permanentUrl} (tipo: ${fileType})`);
       } catch (error: any) {
         console.error(`❌ Error al procesar urlTempFile:`, error.message);
       }
@@ -173,15 +173,16 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   }
 
   // --- TRANSCRIPCIÓN DE NOTAS DE VOZ con Whisper ---
-  // BuilderBot NO reenvía la transcripción en el webhook (solo body/_event_voice_note__ + urlTempFile).
-  // Usamos OpenAI Whisper para transcribir el audio nosotros.
+  // BuilderBot Cloud NO reenvía la transcripción (confirmado por logs).
+  // Transcribimos directamente desde urlTempFile (URL fresca) para mayor confiabilidad.
   if ((isVoiceNote || isAudioEvent) && !messageText) {
-    // Buscar URL del audio: primero en attachments procesados, luego en urlTempFile directo
-    const audioAttachment = processedAttachments.find((a) => a.type === "audio");
-    const audioUrl = audioAttachment?.url || (urlTempFile && isAbsoluteUrl(urlTempFile) ? urlTempFile : null);
+    // Preferir urlTempFile directo (más fresco) sobre la URL de Blob
+    const audioUrl = (urlTempFile && isAbsoluteUrl(urlTempFile))
+      ? urlTempFile
+      : processedAttachments.find((a) => a.type === "audio")?.url || null;
 
     if (audioUrl) {
-      console.log(`🎤 Nota de voz detectada. Transcribiendo con Whisper: ${audioUrl}`);
+      console.log(`🎤 Transcribiendo nota de voz con Whisper...`);
       const transcription = await transcribeAudio(audioUrl);
       if (transcription) {
         messageText = transcription;
