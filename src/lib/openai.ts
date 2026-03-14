@@ -51,25 +51,7 @@ export async function summarizeConversation(
     .map((msg) => `[${msg.from}]: ${msg.text}`)
     .join('\n');
 
-  const prompt = `Sos un abogado que está leyendo una conversación entre un cliente y un bot de una plataforma de reclamos legales.
-
-IMPORTANTE: Tu tarea es INTERPRETAR y SINTETIZAR, NO copiar ni citar lo que dijo el cliente.
-
-Escribí 2 a 4 oraciones en prosa que expliquen:
-1. Cuál es la situación legal del cliente (despido, accidente, trabajo en negro, deuda, etc.)
-2. Los hechos y datos más relevantes (fechas, montos, partes involucradas, tipo de relación laboral, etc.)
-3. Qué tipo de reclamo o acción legal correspondería, si se puede inferir.
-
-Reglas estrictas:
-- NO copies frases del cliente. INTERPRETÁ y reformulá con lenguaje profesional.
-- NO menciones el bot, los términos ni los mensajes automáticos.
-- Si faltan datos importantes, acláralos al final (ej: "Falta información sobre...").
-- Si hay poco contenido útil, describí brevemente lo que se sabe y señalá qué falta.
-
-Conversación:
-${conversationText}
-
-Resumen interpretado (prosa profesional, 2-4 oraciones, NO citar diálogo):`;
+  const prompt = `Hacé un resumen de esta conversación.\n\n${conversationText}`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -77,16 +59,15 @@ Resumen interpretado (prosa profesional, 2-4 oraciones, NO citar diálogo):`;
       messages: [
         {
           role: 'system',
-          content:
-            'Sos un abogado experto. Tu tarea es SINTETIZAR e INTERPRETAR conversaciones de reclamos legales en 2-4 oraciones profesionales. NUNCA copiás ni citás lo que dijo el cliente. Siempre reformulás con lenguaje jurídico claro. Destacás hechos, datos, tipo de reclamo y lo que falta saber.',
+          content: 'Sos un asistente jurídico. Hacés resúmenes claros y concisos de conversaciones de reclamos legales.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.4,
-      max_tokens: 280,
+      temperature: 0.3,
+      max_tokens: 300,
     });
 
     const summary = response.choices[0]?.message?.content?.trim() || '';
