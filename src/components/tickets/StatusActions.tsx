@@ -3,6 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 import type { TicketStatus } from "@/lib/types";
+import { statusLabels } from "@/lib/tickets";
+
+const ALL_STATUSES: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING_CUSTOMER", "RESOLVED", "CLOSED"];
 
 export function StatusActions({
   ticketId,
@@ -46,7 +49,7 @@ export function StatusActions({
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
             <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
-              {(["WAITING_CUSTOMER", "RESOLVED", "CLOSED"] as const).map((status) => (
+              {ALL_STATUSES.map((status) => (
                 <button
                   key={status}
                   type="button"
@@ -54,9 +57,7 @@ export function StatusActions({
                   onClick={() => updateStatus(status)}
                   className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
-                  {status === "WAITING_CUSTOMER" && "Esperando Cliente"}
-                  {status === "RESOLVED" && "Marcar como Resuelto"}
-                  {status === "CLOSED" && "Cerrar"}
+                  {statusLabels[status]}
                 </button>
               ))}
             </div>
@@ -68,30 +69,17 @@ export function StatusActions({
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button
-        type="button"
-        disabled={isPending || currentStatus === "WAITING_CUSTOMER"}
-        onClick={() => updateStatus("WAITING_CUSTOMER")}
-        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-      >
-        Esperando Cliente
-      </button>
-      <button
-        type="button"
-        disabled={isPending || currentStatus === "RESOLVED"}
-        onClick={() => updateStatus("RESOLVED")}
-        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-      >
-        Marcar como Resuelto
-      </button>
-      <button
-        type="button"
-        disabled={isPending || currentStatus === "CLOSED"}
-        onClick={() => updateStatus("CLOSED")}
-        className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-      >
-        Cerrar
-      </button>
+      {ALL_STATUSES.map((status) => (
+        <button
+          key={status}
+          type="button"
+          disabled={isPending || currentStatus === status}
+          onClick={() => updateStatus(status)}
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+        >
+          {statusLabels[status]}
+        </button>
+      ))}
     </div>
   );
 }
