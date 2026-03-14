@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { generateTicketCode } from "@/lib/tickets";
 import { uploadToBlob, getFileExtension } from "@/lib/blob";
-import { summarizeConversation, classifyLegalType, transcribeAudio } from "@/lib/openai";
+import { summarizeConversation, classifyLegalType } from "@/lib/openai";
 // Using string literals instead of Prisma enums for compatibility
 
 // Schema para el formato de BuilderBot.cloud (permisivo: from puede venir como número, body puede faltar)
@@ -154,10 +154,8 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     // Validar que sea URL absoluta
     if (!urlTempFile.startsWith("http://") && !urlTempFile.startsWith("https://")) {
       console.error(`❌ urlTempFile no es URL absoluta: ${urlTempFile}`);
-      // No agregar si no es absoluta
     } else {
       try {
-        // Subir a Vercel Blob
         const permanentUrl = await uploadToBlob(urlTempFile, `media-${Date.now()}.${getFileExtension(urlTempFile)}`);
         const fileType = getFileTypeFromUrl(urlTempFile);
         
@@ -170,42 +168,33 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
         console.log(`✅ Archivo subido a Blob: ${permanentUrl}`);
       } catch (error: any) {
         console.error(`❌ Error al procesar urlTempFile:`, error.message);
-        // No agregar el attachment si falla
       }
     }
   }
 
-  // --- TRANSCRIPCIÓN DE NOTAS DE VOZ ---
-  // Si el evento es una nota de voz o audio, transcribir con Whisper y usar como texto del mensaje
+  // --- TRANSCRIPCIÓN DE NOTAS DE VOZ desde BuilderBot ---
+  // BuilderBot ya transcribe el audio internamente. La transcripción puede venir en
+  // distintos campos del payload. Si no viene, mostramos [Nota de voz] como placeholder.
   if ((isVoiceNote || isAudioEvent) && !messageText) {
-    // Buscar la URL del audio: primero en urlTempFile, luego en attachments ya procesados
-    const audioAttachment = processedAttachments.find((a) => a.type === "audio");
-    const audioUrl = audioAttachment?.url;
+    // Log del payload completo para identificar el campo exacto de transcripción
+    console.log(`🎤 [VoiceNote] Payload completo de data:`, JSON.stringify(data, null, 2));
 
-    if (audioUrl) {
-      console.log(`🎤 Nota de voz detectada. Transcribiendo con Whisper...`);
-      const transcription = await transcribeAudio(audioUrl);
-      if (transcription) {
-        messageText = transcription;
-        console.log(`✅ Transcripción obtenida: "${transcription.slice(0, 80)}..."`);
-      } else {
-        messageText = "[Nota de voz - no se pudo transcribir]";
-        console.warn(`⚠️ No se pudo transcribir la nota de voz`);
-      }
+    // Intentar extraer transcripción de los campos más comunes que BuilderBot puede enviar
+    const transcription: string =
+      data.caption ||
+      data.transcription ||
+      data.voiceTranscription ||
+      data.voice_transcription ||
+      data.text ||
+      data.transcript ||
+      "";
+
+    if (transcription && transcription.trim()) {
+      messageText = transcription.trim();
+      console.log(`✅ Transcripción de BuilderBot encontrada: "${messageText.slice(0, 100)}"`);
     } else {
-      // Sin URL de audio subida aún, intentar transcribir directo desde urlTempFile
-      if (urlTempFile && isAbsoluteUrl(urlTempFile)) {
-        console.log(`🎤 Transcribiendo desde urlTempFile directamente...`);
-        const transcription = await transcribeAudio(urlTempFile);
-        if (transcription) {
-          messageText = transcription;
-          console.log(`✅ Transcripción obtenida: "${transcription.slice(0, 80)}..."`);
-        } else {
-          messageText = "[Nota de voz - no se pudo transcribir]";
-        }
-      } else {
-        messageText = "[Nota de voz]";
-      }
+      messageText = "[Nota de voz]";
+      console.warn(`⚠️ No se encontró transcripción de BuilderBot en el payload. Campos disponibles: ${Object.keys(data).join(", ")}`);
     }
   }
 
