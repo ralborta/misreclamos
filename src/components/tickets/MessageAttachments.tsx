@@ -62,7 +62,13 @@ export function MessageAttachments({ attachments }: { attachments: Attachment[] 
                   className="h-32 rounded-lg border border-slate-200"
                 />
               ) : att.type === "audio" ? (
-                <audio src={att.url} controls className="rounded-lg" />
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-0.5">
+                    <span>🎤</span>
+                    <span>Nota de voz</span>
+                  </div>
+                  <audio src={att.url} controls className="rounded-lg max-w-[260px]" />
+                </div>
               ) : (
                 <a
                   href={att.url}

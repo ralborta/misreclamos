@@ -231,6 +231,52 @@ Tipo de caso (respuesta exacta de la lista):`;
   }
 }
 
+/**
+ * Transcribe un archivo de audio a texto usando OpenAI Whisper.
+ * Devuelve el texto transcripto o null si falla.
+ */
+export async function transcribeAudio(audioUrl: string): Promise<string | null> {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('[Whisper] OPENAI_API_KEY no configurada, no se puede transcribir');
+    return null;
+  }
+  try {
+    console.log(`[Whisper] Descargando audio: ${audioUrl}`);
+    const res = await fetch(audioUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status} al descargar audio`);
+    const buffer = await res.arrayBuffer();
+
+    // Extraer extensión de la URL (sin query params)
+    const urlPath = audioUrl.split('?')[0];
+    const ext = urlPath.split('.').pop()?.toLowerCase() || 'ogg';
+    const mimeMap: Record<string, string> = {
+      mp3: 'audio/mpeg',
+      mp4: 'audio/mp4',
+      m4a: 'audio/mp4',
+      ogg: 'audio/ogg',
+      oga: 'audio/ogg',
+      wav: 'audio/wav',
+      webm: 'audio/webm',
+    };
+    const mimeType = mimeMap[ext] || 'audio/ogg';
+
+    const file = new File([buffer], `voice_note.${ext}`, { type: mimeType });
+
+    const transcription = await openai.audio.transcriptions.create({
+      file,
+      model: 'whisper-1',
+      language: 'es',
+    });
+
+    const text = transcription.text?.trim() || '';
+    console.log(`[Whisper] Transcripción: "${text.slice(0, 100)}${text.length > 100 ? '...' : ''}"`);
+    return text || null;
+  } catch (error: any) {
+    console.error('[Whisper] Error al transcribir audio:', error.message);
+    return null;
+  }
+}
+
 export type TicketPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 
 const PRIORITY_OPTIONS: TicketPriority[] = ['LOW', 'NORMAL', 'HIGH', 'URGENT'];

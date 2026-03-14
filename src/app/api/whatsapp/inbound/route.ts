@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { generateTicketCode } from "@/lib/tickets";
 import { uploadToBlob, getFileExtension } from "@/lib/blob";
-import { summarizeConversation, classifyLegalType } from "@/lib/openai";
+import { summarizeConversation, classifyLegalType, transcribeAudio } from "@/lib/openai";
 // Using string literals instead of Prisma enums for compatibility
 
 // Schema para el formato de BuilderBot.cloud (permisivo: from puede venir como número, body puede faltar)
@@ -115,7 +115,11 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   // Algunos eventos de documentos/imágenes llegan con body de sistema tipo "_event_document__...".
   // Si hay adjuntos y el texto parece un marcador de evento, lo ocultamos y dejamos solo el adjunto.
   const trimmedBody = (messageText || "").trim();
-  if (attachments.length > 0 && /^_event_(document|image|video|audio)__/i.test(trimmedBody)) {
+  const isVoiceNote = /^_event_voice_note__/i.test(trimmedBody);
+  const isAudioEvent = /^_event_audio__/i.test(trimmedBody);
+  const isMediaEvent = /^_event_(document|image|video|audio)__/i.test(trimmedBody);
+
+  if ((isMediaEvent || isVoiceNote) && attachments.length > 0) {
     messageText = "";
   }
 
@@ -155,17 +159,52 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
       try {
         // Subir a Vercel Blob
         const permanentUrl = await uploadToBlob(urlTempFile, `media-${Date.now()}.${getFileExtension(urlTempFile)}`);
+        const fileType = getFileTypeFromUrl(urlTempFile);
         
         processedAttachments.push({
           url: permanentUrl,
-          type: getFileTypeFromUrl(urlTempFile),
-          name: "Archivo multimedia",
+          type: fileType,
+          name: (isVoiceNote || isAudioEvent || fileType === "audio") ? "Nota de voz" : "Archivo multimedia",
         });
         
         console.log(`✅ Archivo subido a Blob: ${permanentUrl}`);
       } catch (error: any) {
         console.error(`❌ Error al procesar urlTempFile:`, error.message);
         // No agregar el attachment si falla
+      }
+    }
+  }
+
+  // --- TRANSCRIPCIÓN DE NOTAS DE VOZ ---
+  // Si el evento es una nota de voz o audio, transcribir con Whisper y usar como texto del mensaje
+  if ((isVoiceNote || isAudioEvent) && !messageText) {
+    // Buscar la URL del audio: primero en urlTempFile, luego en attachments ya procesados
+    const audioAttachment = processedAttachments.find((a) => a.type === "audio");
+    const audioUrl = audioAttachment?.url;
+
+    if (audioUrl) {
+      console.log(`🎤 Nota de voz detectada. Transcribiendo con Whisper...`);
+      const transcription = await transcribeAudio(audioUrl);
+      if (transcription) {
+        messageText = transcription;
+        console.log(`✅ Transcripción obtenida: "${transcription.slice(0, 80)}..."`);
+      } else {
+        messageText = "[Nota de voz - no se pudo transcribir]";
+        console.warn(`⚠️ No se pudo transcribir la nota de voz`);
+      }
+    } else {
+      // Sin URL de audio subida aún, intentar transcribir directo desde urlTempFile
+      if (urlTempFile && isAbsoluteUrl(urlTempFile)) {
+        console.log(`🎤 Transcribiendo desde urlTempFile directamente...`);
+        const transcription = await transcribeAudio(urlTempFile);
+        if (transcription) {
+          messageText = transcription;
+          console.log(`✅ Transcripción obtenida: "${transcription.slice(0, 80)}..."`);
+        } else {
+          messageText = "[Nota de voz - no se pudo transcribir]";
+        }
+      } else {
+        messageText = "[Nota de voz]";
       }
     }
   }
