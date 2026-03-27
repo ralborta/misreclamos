@@ -1,4 +1,4 @@
-import { requireSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { CreateCustomerForm } from "@/components/clientes/CreateCustomerForm";
 import { ImportExcelForm } from "@/components/clientes/ImportExcelForm";
@@ -6,7 +6,7 @@ import { CustomersList } from "@/components/clientes/CustomersList";
 import { prisma } from "@/lib/db";
 
 export default async function ClientesPage() {
-  await requireSession();
+  await requireAdmin();
 
   const customers = await prisma.customer.findMany({
     include: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,21 @@ export function TicketsLayout({ children }: { children: React.ReactNode }) {
 function ReclamosSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [role, setRole] = useState<"ADMIN" | "SUPPORT" | null>(null);
+  const [displayName, setDisplayName] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.user?.role) setRole(d.user.role);
+        if (d.user?.name) setDisplayName(d.user.name);
+      })
+      .catch(() => setRole("SUPPORT"));
+  }, []);
+
+  const isAdmin = role === "ADMIN";
+  const navReady = role !== null;
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -95,7 +110,9 @@ function ReclamosSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         <SectionTitle>Inicio</SectionTitle>
         <NavLink label="Dashboard" href="/dashboard" icon="home" onNavigate={onClose} />
         <NavLink label="Todos los Casos" href="/tickets" icon="folder" onNavigate={onClose} />
-        <NavLink label="Legado" href="/legado" icon="briefcase" onNavigate={onClose} />
+        {navReady && isAdmin ? (
+          <NavLink label="Legado" href="/legado" icon="briefcase" onNavigate={onClose} />
+        ) : null}
 
         <div className="my-2 border-t border-white/10" />
 
@@ -113,15 +130,30 @@ function ReclamosSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 
         <div className="my-2 border-t border-white/10" />
 
-        <SectionTitle>Gestión</SectionTitle>
-        <NavLink label="Casos" href="/casos" icon="folder" onNavigate={onClose} />
-        <NavLink label="Abogados" href="/agentes" icon="users" onNavigate={onClose} />
-        <NavLink label="Clientes" href="/clientes" icon="users" onNavigate={onClose} />
-        <NavLink label="Configuración" href="/configuracion" icon="settings" onNavigate={onClose} />
+        {navReady && isAdmin ? (
+          <>
+            <SectionTitle>Gestión</SectionTitle>
+            <NavLink label="Casos" href="/casos" icon="folder" onNavigate={onClose} />
+            <NavLink label="Abogados" href="/agentes" icon="users" onNavigate={onClose} />
+            <NavLink label="Clientes" href="/clientes" icon="users" onNavigate={onClose} />
+            <NavLink label="Configuración" href="/configuracion" icon="settings" onNavigate={onClose} />
+            <NavLink label="Usuarios acceso" href="/configuracion/usuarios" icon="users" onNavigate={onClose} />
+          </>
+        ) : null}
       </nav>
 
       {/* Pie */}
-      <div className="bg-[#2C3E50] px-4 py-4 flex-shrink-0 border-t border-white/10">
+      <div className="bg-[#2C3E50] px-4 py-4 flex-shrink-0 border-t border-white/10 space-y-2">
+        {displayName ? (
+          <p className="text-center text-xs text-white/70 truncate px-1" title={displayName}>
+            {displayName}
+            {role ? (
+              <span className="block text-[10px] text-white/50 mt-0.5">
+                {role === "ADMIN" ? "Administrador" : "Abogado"}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
         <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-colors"

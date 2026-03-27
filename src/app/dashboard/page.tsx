@@ -1,41 +1,46 @@
 import Link from "next/link";
+import type { SessionUser } from "@/lib/auth";
 import { requireSession } from "@/lib/auth";
 import { statusLabels, priorityLabels } from "@/lib/tickets";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { prisma } from "@/lib/db";
+import { andTicketScope, ticketWhereForUser } from "@/lib/ticket-scope";
 
-async function getDashboardStats() {
+async function getDashboardStats(user: SessionUser) {
   try {
+    const tw = ticketWhereForUser(user);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const totalTickets = await prisma.ticket.count();
+    const totalTickets = await prisma.ticket.count({ where: tw });
 
     const ticketsByStatus = await prisma.ticket.groupBy({
       by: ["status"],
+      where: tw,
       _count: true,
     });
 
     const ticketsByPriority = await prisma.ticket.groupBy({
       by: ["priority"],
+      where: tw,
       _count: true,
     });
 
     const ticketsToday = await prisma.ticket.count({
-      where: { createdAt: { gte: today } },
+      where: andTicketScope(user, { createdAt: { gte: today } }),
     });
 
     const resolvedToday = await prisma.ticket.count({
-      where: {
+      where: andTicketScope(user, {
         status: "RESOLVED",
         updatedAt: { gte: today },
-      },
+      }),
     });
 
     const resolvedTickets = await prisma.ticket.findMany({
-      where: {
+      where: andTicketScope(user, {
         status: { in: ["RESOLVED", "CLOSED"] },
-      },
+      }),
       select: {
         createdAt: true,
         updatedAt: true,
@@ -50,51 +55,71 @@ async function getDashboardStats() {
       : 0;
 
     const urgentUnassigned = await prisma.ticket.count({
-      where: {
+      where: andTicketScope(user, {
         priority: "URGENT",
         status: { notIn: ["RESOLVED", "CLOSED"] },
-      },
+      }),
     });
 
-    const topAgents = await prisma.agentUser.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        _count: {
-          select: {
-            tickets: {
-              where: {
-                status: { notIn: ["CLOSED"] },
+    let topAgents;
+    if (user.role === "ADMIN") {
+      topAgents = await prisma.agentUser.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          _count: {
+            select: {
+              tickets: {
+                where: {
+                  status: { notIn: ["CLOSED"] },
+                },
               },
             },
           },
         },
-      },
-      orderBy: {
-        tickets: {
-          _count: "desc",
+        orderBy: {
+          tickets: {
+            _count: "desc",
+          },
         },
-      },
-      take: 5,
-    });
+        take: 5,
+      });
+    } else {
+      const me = await prisma.agentUser.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          _count: {
+            select: {
+              tickets: {
+                where: { status: { notIn: ["CLOSED"] } },
+              },
+            },
+          },
+        },
+      });
+      topAgents = me ? [me] : [];
+    }
 
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       date.setHours(0, 0, 0, 0);
-      
+
       const nextDate = new Date(date);
       nextDate.setDate(nextDate.getDate() + 1);
 
       const count = await prisma.ticket.count({
-        where: {
+        where: andTicketScope(user, {
           createdAt: {
             gte: date,
             lt: nextDate,
           },
-        },
+        }),
       });
 
       last7Days.push({
@@ -104,13 +129,20 @@ async function getDashboardStats() {
     }
 
     const topCompanies = await prisma.customer.findMany({
+      where:
+        user.role === "SUPPORT"
+          ? { tickets: { some: { assignedToUserId: user.id } } }
+          : undefined,
       select: {
         id: true,
         name: true,
         phone: true,
         _count: {
           select: {
-            tickets: true,
+            tickets:
+              user.role === "SUPPORT"
+                ? { where: { assignedToUserId: user.id } }
+                : true,
           },
         },
       },
@@ -124,6 +156,7 @@ async function getDashboardStats() {
 
     const ticketsByLegalType = await prisma.ticket.groupBy({
       by: ["legalType"],
+      where: tw,
       _count: true,
       orderBy: {
         _count: { legalType: "desc" },
@@ -177,8 +210,8 @@ async function getDashboardStats() {
 }
 
 export default async function DashboardPage() {
-  await requireSession();
-  const stats = await getDashboardStats();
+  const session = await requireSession();
+  const stats = await getDashboardStats(session.user!);
 
   if (!stats) {
     return (

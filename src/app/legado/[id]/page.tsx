@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { LegadoActions } from "@/components/legado/LegadoActions";
 import { CopyButton } from "@/components/legado/CopyButton";
@@ -34,7 +34,7 @@ export default async function LegadoDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireSession();
+  await requireAdmin();
   const { id } = await params;
 
   const legado = await prisma.legado.findUnique({ where: { id } });

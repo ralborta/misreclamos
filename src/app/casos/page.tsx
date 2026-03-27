@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { CaseTypesList } from "@/components/casos/CaseTypesList";
 import { CreateCaseTypeForm } from "@/components/casos/CreateCaseTypeForm";
@@ -7,7 +7,7 @@ import { CreateCaseTypeForm } from "@/components/casos/CreateCaseTypeForm";
 export const dynamic = "force-dynamic";
 
 export default async function CasosPage() {
-  await requireSession();
+  await requireAdmin();
 
   const casos = await prisma.caseType.findMany({
     orderBy: { order: "asc" },

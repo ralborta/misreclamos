@@ -1,7 +1,11 @@
+import type { SessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { ticketWhereForUser } from "@/lib/ticket-scope";
 
-export async function getTicketsAndCounts() {
+export async function getTicketsAndCounts(user: SessionUser) {
+  const where = ticketWhereForUser(user);
   const tickets = await prisma.ticket.findMany({
+    where,
     select: {
       id: true,
       code: true,

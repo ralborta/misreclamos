@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sessionOptions, type SessionData } from "@/lib/auth";
+import { isAdmin, sessionOptions, type SessionData } from "@/lib/auth";
 
 const createCaseTypeSchema = z.object({
   slug: z.string().min(1).regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
@@ -30,8 +30,8 @@ export async function GET() {
 // POST /api/casos - Crear tipo de caso
 export async function POST(req: Request) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const json = await req.json().catch(() => null);

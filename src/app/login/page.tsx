@@ -5,6 +5,7 @@ import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -35,7 +36,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f3f8fd] px-4">
       <div className="w-full max-w-md">
-        {/* Logo: public/Logo-MisReclamos.png (debe estar en git para deploy) */}
         <div className="text-center mb-10">
           <img
             src="/Logo-MisReclamos.png"
@@ -55,14 +55,27 @@ export default function LoginPage() {
           <p className="text-[#213b5c]/70 text-sm">Tus derechos, tu abogado</p>
         </div>
 
-        {/* Login Card */}
         <div className="rounded-xl bg-white p-8 shadow-sm border border-[#f7941d]/30">
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-[#213b5c] mb-1">Acceso interno</h2>
-            <p className="text-sm text-[#213b5c]/70">Ingresa tus credenciales para continuar</p>
+            <p className="text-sm text-[#213b5c]/70">Usuario y contraseña del abogado o administrador</p>
           </div>
-          
+
           <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#213b5c]" htmlFor="username">
+                Usuario
+              </label>
+              <input
+                id="username"
+                type="text"
+                autoComplete="username"
+                className="w-full rounded-lg border border-[#213b5c]/30 bg-white px-4 py-3 text-[#213b5c] focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] focus:outline-none transition-all"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="ej: maria.garcia"
+              />
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-[#213b5c]" htmlFor="password">
                 Contraseña
@@ -70,10 +83,10 @@ export default function LoginPage() {
               <input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 className="w-full rounded-lg border border-[#213b5c]/30 bg-white px-4 py-3 text-[#213b5c] focus:border-[#f7941d] focus:ring-1 focus:ring-[#f7941d] focus:outline-none transition-all"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Dejar vacío si APP_PASSWORD no está configurado"
               />
             </div>
             {error ? (
@@ -91,9 +104,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Footer */}
-        <p className="text-center mt-8 text-xs text-[#213b5c]/60">
-          Sistema de gestión de reclamos y casos legales
+        <p className="text-center mt-6 text-xs text-[#213b5c]/60 leading-relaxed">
+          El administrador crea usuarios en Configuración → Usuarios acceso. Perfil abogado: solo casos asignados.
         </p>
       </div>
     </div>

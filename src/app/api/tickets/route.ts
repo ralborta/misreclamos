@@ -2,16 +2,22 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { generateTicketCode } from "@/lib/tickets";
 import { sessionOptions, type SessionData } from "@/lib/auth";
+import { andTicketScope } from "@/lib/ticket-scope";
+
 export async function GET(req: Request) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") as "OPEN" | "IN_PROGRESS" | "WAITING_CUSTOMER" | "RESOLVED" | "CLOSED" | null;
   const priority = searchParams.get("priority") as "LOW" | "NORMAL" | "HIGH" | "URGENT" | null;
   const q = searchParams.get("q") || undefined;
 
-  const where = {
+  const filter: Prisma.TicketWhereInput = {
     ...(status ? { status } : {}),
     ...(priority ? { priority } : {}),
     ...(q
@@ -24,6 +30,8 @@ export async function GET(req: Request) {
         }
       : {}),
   };
+
+  const where = andTicketScope(session.user, filter);
 
   const tickets = await prisma.ticket.findMany({
     where,
@@ -47,6 +55,9 @@ const createTicketSchema = z.object({
 export async function POST(req: Request) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
   if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo administradores pueden crear casos desde la API" }, { status: 403 });
+  }
 
   const json = await req.json().catch(() => null);
   const parsed = createTicketSchema.safeParse(json);

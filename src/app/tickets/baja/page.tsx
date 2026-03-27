@@ -1,21 +1,21 @@
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { andTicketScope } from "@/lib/ticket-scope";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { TicketsTable } from "@/components/tickets/TicketsTable";
 
 export default async function TicketsBajaPage() {
-  await requireSession();
+  const session = await requireSession();
+  const where = andTicketScope(session.user!, { priority: "LOW", status: { not: "CLOSED" } });
 
   const tickets = await prisma.ticket.findMany({
-    where: { priority: "LOW", status: { not: "CLOSED" } },
+    where,
     include: { customer: true, assignedTo: true },
     orderBy: { lastMessageAt: "desc" },
     take: 100,
   });
 
-  const totalCount = await prisma.ticket.count({ 
-    where: { priority: "LOW", status: { not: "CLOSED" } } 
-  });
+  const totalCount = await prisma.ticket.count({ where });
 
   return (
     <TicketsLayout>

@@ -6,10 +6,10 @@ import { getTicketsAndCounts } from "@/app/tickets/getTicketsAndCounts";
 export const dynamic = "force-dynamic";
 
 export default async function TicketsPage() {
-  await requireSession();
+  const session = await requireSession();
 
   try {
-    const { tickets, counts } = await getTicketsAndCounts();
+    const { tickets, counts } = await getTicketsAndCounts(session.user!);
     return (
       <TicketsLayout>
         <TicketsPageContent tickets={tickets} counts={counts} />

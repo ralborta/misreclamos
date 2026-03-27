@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sessionOptions, type SessionData } from "@/lib/auth";
+import { isAdmin, sessionOptions, type SessionData } from "@/lib/auth";
 import { setBuilderBotCloudBlacklist, setBotBlacklist } from "@/lib/builderbot";
 
 const updateCustomerSchema = z.object({
@@ -15,7 +15,7 @@ const updateCustomerSchema = z.object({
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;
 
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;
   const json = await req.json().catch(() => null);
@@ -108,7 +108,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { id } = await params;
 

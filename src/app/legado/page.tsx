@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { ImportLegadoForm } from "@/components/legado/ImportLegadoForm";
 
@@ -37,7 +37,7 @@ function formatPhone(raw: string): string {
 }
 
 export default async function LegadoPage() {
-  await requireSession();
+  await requireAdmin();
 
   const registros = await prisma.legado.findMany({
     orderBy: { createdAt: "desc" },

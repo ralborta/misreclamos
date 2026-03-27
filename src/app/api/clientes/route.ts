@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sessionOptions, type SessionData } from "@/lib/auth";
+import { isAdmin, sessionOptions, type SessionData } from "@/lib/auth";
 
 const createCustomerSchema = z.object({
   phone: z.string().min(5),
@@ -12,7 +12,7 @@ const createCustomerSchema = z.object({
 
 export async function GET(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q") || undefined;
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const json = await req.json().catch(() => null);
   const parsed = createCustomerSchema.safeParse(json);

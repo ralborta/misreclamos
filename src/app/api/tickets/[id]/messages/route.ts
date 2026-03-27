@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 import { sessionOptions, type SessionData } from "@/lib/auth";
+import { ticketAccessibleByUser } from "@/lib/ticket-scope";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 import { summarizeConversation } from "@/lib/openai";
 import { uploadFileToBlob } from "@/lib/blob";
@@ -37,6 +38,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
+    const can = await ticketAccessibleByUser(session.user, id);
+    if (!can) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     let text: string;
     let direction: "INBOUND" | "OUTBOUND" | "INTERNAL_NOTE" = "OUTBOUND";

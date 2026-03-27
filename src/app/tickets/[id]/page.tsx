@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { ticketAccessibleByUser } from "@/lib/ticket-scope";
 
 export const dynamic = "force-dynamic";
 import { statusLabels, fromLabels } from "@/lib/tickets";
@@ -15,8 +16,14 @@ import { TicketLiveRefresh } from "@/components/tickets/TicketLiveRefresh";
 import { LegalTypeDropdown } from "@/components/tickets/LegalTypeDropdown";
 
 export default async function TicketDetail({ params }: { params: Promise<{ id: string }> }) {
-  await requireSession();
+  const session = await requireSession();
   const { id } = await params;
+
+  const canSee = await ticketAccessibleByUser(session.user!, id);
+  if (!canSee) {
+    notFound();
+  }
+
   const ticket = await prisma.ticket.findUnique({
     where: { id },
     include: {
@@ -50,6 +57,7 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
 
   const contactName = ticket.contactName || ticket.customer?.name || "Sin nombre";
   const phone = ticket.customer?.phone ? formatPhone(ticket.customer.phone) : "—";
+  const isAdminUser = session.user!.role === "ADMIN";
 
   return (
     <div className="min-h-screen p-3 sm:p-6 bg-slate-50/50">
@@ -76,6 +84,7 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
               currentAgentId={ticket.assignedToUserId}
               agentes={agentes}
               variant="header"
+              canReassign={isAdminUser}
             />
             <a
               href="#conversacion"
@@ -177,10 +186,11 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
               <LegalTypeDropdown ticketId={ticket.id} currentLegalType={ticket.legalType} />
             </div>
             <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-              <AssignAgentDropdown 
-                ticketId={ticket.id} 
-                currentAgentId={ticket.assignedToUserId} 
+              <AssignAgentDropdown
+                ticketId={ticket.id}
+                currentAgentId={ticket.assignedToUserId}
                 agentes={agentes}
+                canReassign={isAdminUser}
               />
             </div>
             <ConversationSummary ticketId={ticket.id} initialSummary={ticket.aiSummary} />

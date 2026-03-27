@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { prisma } from "@/lib/db";
 import { sessionOptions, type SessionData } from "@/lib/auth";
+import { ticketAccessibleByUser } from "@/lib/ticket-scope";
 import { summarizeConversation, classifyLegalType, inferPriorityFromConversation } from "@/lib/openai";
 
 /**
@@ -20,6 +21,8 @@ export async function POST(
 
   try {
     const { id } = await params;
+    const can = await ticketAccessibleByUser(session.user, id);
+    if (!can) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     // Obtener el ticket con todos sus mensajes
     const ticket = await prisma.ticket.findUnique({

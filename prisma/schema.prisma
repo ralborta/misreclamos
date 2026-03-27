@@ -92,6 +92,10 @@ model AgentUser {
   email          String    @unique
   name           String
   phone          String    // Número de teléfono para notificaciones por WhatsApp
+  /// Login backoffice (único, sin espacios; se guarda en minúsculas)
+  username       String?   @unique
+  /// bcrypt; null = usuario sin acceso al backoffice hasta que un admin defina contraseña
+  passwordHash   String?
   role           AgentRole
   // Información profesional
   matricula      String?   // Matrícula profesional del abogado

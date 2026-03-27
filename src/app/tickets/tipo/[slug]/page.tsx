@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { andTicketScope } from "@/lib/ticket-scope";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { TicketsTable } from "@/components/tickets/TicketsTable";
 
@@ -23,7 +24,7 @@ interface PageProps {
 }
 
 export default async function TicketsTipoPage({ params }: PageProps) {
-  await requireSession();
+  const session = await requireSession();
   const { slug } = await params;
 
   const caseType = await prisma.caseType.findUnique({
@@ -34,15 +35,17 @@ export default async function TicketsTipoPage({ params }: PageProps) {
     notFound();
   }
 
+  const whereTipo = andTicketScope(session.user!, { legalType: caseType.legalType });
+
   const tickets = await prisma.ticket.findMany({
-    where: { legalType: caseType.legalType },
+    where: whereTipo,
     include: { customer: true, assignedTo: true },
     orderBy: { lastMessageAt: "desc" },
     take: 100,
   });
 
   const totalCount = await prisma.ticket.count({
-    where: { legalType: caseType.legalType },
+    where: whereTipo,
   });
 
   const box = colorToBoxClass[caseType.color] ?? colorToBoxClass["slate-500"];

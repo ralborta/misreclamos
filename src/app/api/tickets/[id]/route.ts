@@ -3,10 +3,15 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sessionOptions, type SessionData } from "@/lib/auth";
+import { isAdmin, sessionOptions, type SessionData } from "@/lib/auth";
+import { ticketAccessibleByUser } from "@/lib/ticket-scope";
 import { sendWhatsAppMessage } from "@/lib/builderbot";
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+  if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await params;
+  const ok = await ticketAccessibleByUser(session.user, id);
+  if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const ticket = await prisma.ticket.findUnique({
     where: { id },
     include: { customer: true, assignedTo: true, messages: true },
@@ -28,10 +33,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!session.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+  const can = await ticketAccessibleByUser(session.user, id);
+  if (!can) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const json = await req.json().catch(() => null);
   const parsed = updateSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: "Formato inválido", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (!isAdmin(session.user) && parsed.data.assignedToUserId !== undefined) {
+    return NextResponse.json(
+      { error: "Solo un administrador puede asignar o reasignar el caso a otro abogado" },
+      { status: 403 }
+    );
   }
 
   // Obtener el ticket actual para comparar cambios

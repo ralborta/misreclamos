@@ -7,7 +7,13 @@ export type SessionUser = {
   email?: string;
   name?: string;
   role: "ADMIN" | "SUPPORT";
+  /** Sesión legacy (APP_PASSWORD + usuario admin) sin fila en AgentUser */
+  legacy?: boolean;
 };
+
+export function isAdmin(user: SessionUser | undefined): boolean {
+  return user?.role === "ADMIN";
+}
 
 export type SessionData = {
   user?: SessionUser;
@@ -39,6 +45,15 @@ export async function requireSession() {
   const session = await getSession();
   if (!session.user) {
     redirect("/login");
+  }
+  return session;
+}
+
+/** Solo administradores; abogados van a /tickets */
+export async function requireAdmin() {
+  const session = await requireSession();
+  if (!isAdmin(session.user!)) {
+    redirect("/tickets");
   }
   return session;
 }

@@ -1,20 +1,22 @@
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
+import { andTicketScope } from "@/lib/ticket-scope";
 import { TicketsLayout } from "@/components/tickets/TicketsLayout";
 import { TicketsTable } from "@/components/tickets/TicketsTable";
 
 export default async function TicketsSucesionesPage() {
-  await requireSession();
+  const session = await requireSession();
   const legalType = "Sucesiones";
+  const where = andTicketScope(session.user!, { legalType });
 
   const tickets = await prisma.ticket.findMany({
-    where: { legalType },
+    where,
     include: { customer: true, assignedTo: true },
     orderBy: { lastMessageAt: "desc" },
     take: 100,
   });
 
-  const totalCount = await prisma.ticket.count({ where: { legalType } });
+  const totalCount = await prisma.ticket.count({ where });
 
   return (
     <TicketsLayout>

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sessionOptions, type SessionData } from "@/lib/auth";
+import { isAdmin, sessionOptions, type SessionData } from "@/lib/auth";
 
 const updateAgentSchema = z.object({
   name: z.string().min(1).optional(),
@@ -17,8 +17,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const { id } = await params;
@@ -61,8 +61,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const { id } = await params;

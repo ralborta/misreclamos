@@ -14,13 +14,24 @@ interface AssignAgentDropdownProps {
   currentAgentId: string | null;
   agentes: Agent[];
   variant?: "header";
+  /** Si es false (abogado), solo se muestra quién está asignado sin poder cambiar */
+  canReassign?: boolean;
 }
 
-export function AssignAgentDropdown({ ticketId, currentAgentId, agentes, variant }: AssignAgentDropdownProps) {
+export function AssignAgentDropdown({
+  ticketId,
+  currentAgentId,
+  agentes,
+  variant,
+  canReassign = true,
+}: AssignAgentDropdownProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState(currentAgentId || "");
   const [open, setOpen] = useState(false);
+
+  const assignedName =
+    agentes.find((a) => a.id === currentAgentId)?.name || (currentAgentId ? "—" : "Sin asignar");
 
   const handleChange = async (newAgentId: string) => {
     setSelectedAgentId(newAgentId);
@@ -49,6 +60,22 @@ export function AssignAgentDropdown({ ticketId, currentAgentId, agentes, variant
       setLoading(false);
     }
   };
+
+  if (!canReassign) {
+    if (variant === "header") {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-600">
+          Asignado: {assignedName}
+        </span>
+      );
+    }
+    return (
+      <div>
+        <div className="text-sm font-semibold text-slate-700 mb-1">Asignado a</div>
+        <p className="text-sm text-slate-600">{assignedName}</p>
+      </div>
+    );
+  }
 
   if (variant === "header") {
     return (

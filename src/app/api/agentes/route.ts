@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { sessionOptions, type SessionData } from "@/lib/auth";
+import { isAdmin, sessionOptions, type SessionData } from "@/lib/auth";
 
 const createAgentSchema = z.object({
   name: z.string().min(1),
@@ -15,8 +15,8 @@ const createAgentSchema = z.object({
 // GET /api/agentes - Listar todos los agentes
 export async function GET() {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const agentes = await prisma.agentUser.findMany({
@@ -34,8 +34,8 @@ export async function GET() {
 // POST /api/agentes - Crear nuevo agente
 export async function POST(req: Request) {
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
-  if (!session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session.user || !isAdmin(session.user)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
   const json = await req.json().catch(() => null);
