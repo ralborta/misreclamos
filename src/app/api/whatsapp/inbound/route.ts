@@ -353,10 +353,8 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     const solicitaAgente = /tenponder en contacto con un agente de soporte|poner en contacto con un agente|contactar con un agente|hablar con un agente|necesito hablar con un agente/i.test(messageLower);
 
     if (shouldEscalate && solicitaAgente) {
-      autoReplyMessage = `Hola! Tu consulta ha sido escalada a nuestro equipo. Reclamo: *${ticket.code}*. Te responderemos pronto.`;
+      autoReplyMessage = `Gracias por contactarnos, tu consulta ha sido escalada a nuestro equipo. Reclamo: *${ticket.code}*. Un abogado de nuestro equipo te contactará pronto.`;
     }
-    // El mensaje "Hemos recibido tu mensaje. Reclamo: *CODE*..." se envía al FINAL del flujo,
-    // cuando el bot envía una despedida (processOutgoingMessage), no al crear el ticket.
   }
 
   // Enviar respuesta automática si corresponde
@@ -384,6 +382,18 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
     }
   }
 
+  // Número de reclamo: solo al cerrar la interacción — despedida del cliente (entrante) o del bot en outgoing.
+  const textForDespedida = (actualMessage || "").trim();
+  if (!customer.botPausedAt && textForDespedida && isDespedida(textForDespedida)) {
+    await sendTicketCodeAtFarewell({
+      ticketId: ticket.id,
+      ticketCode: ticket.code,
+      customerPhone,
+      peerText: textForDespedida,
+      rawExtra: { atClienteDespedida: true },
+    });
+  }
+
   // Generar/actualizar resumen de la conversación con IA
   await updateTicketSummary(ticket.id);
   await classifyTicketTypeIfEmpty(ticket.id);
@@ -397,16 +407,120 @@ async function processIncomingMessage({ eventName, data }: { eventName: string; 
   });
 }
 
-/** Detecta si el mensaje del bot parece una despedida / cierre del flujo (envío del código al final). */
+/** Detecta si el mensaje del bot o del cliente parece una despedida / cierre del flujo (envío del código al final). */
 function isDespedida(text: string): boolean {
   if (!text || !text.trim()) return false;
   const t = text.toLowerCase().trim();
+  // Cierres muy frecuentes en WhatsApp (antes no matcheaban → no se enviaba el código)
+  if (/\b(chau|chao)\b|nos vemos|que estés bien|que te vaya bien|cuídate|hasta luego|hasta pronto/i.test(t)) {
+    return true;
+  }
+  // Agradecimiento breve de cierre (ej. "no nada gracias", "ok chau")
+  if (t.length <= 88 && /^(ok\s*)?(no\s*,?\s*)?(nada\s*)?(gracias|muchas gracias|te agradezco)[\s!.,¡¿]*$/i.test(t)) {
+    return true;
+  }
+  if (t.length <= 48 && /^(ok\s*)?(chau|chao|nos vemos)[\s!.,¡¿]*$/i.test(t)) {
+    return true;
+  }
   return (
     /un abogado (te )?contactar|nos pondremos en contacto|te responderemos pronto|abogado lo revisar/i.test(t) ||
     /(gracias por (contactar|escribir|comunicarte)|cualquier cosa escribinos|estamos en contacto)/i.test(t) ||
     /(despedida|hasta luego|que tengas buen|un abogado lo revisar)/i.test(t) ||
-    /(reclamo.*revisar|revisar[aá].*pronto)/i.test(t)
+    /(reclamo.*revisar|revisar[aá].*pronto)/i.test(t) ||
+    /(quedamos a disposici[oó]n|ante cualquier duda|saludos cordiales|muchas gracias)/i.test(t) ||
+    /(en breve|a la brevedad|nos comunicaremos|te contactaremos)/i.test(t) ||
+    /(tu consulta|tu mensaje).*(recibid|registrad|derivad)/i.test(t) ||
+    /(perfecto|listo|de nada|con gusto)[^.]{0,40}(gracias|saludo)/i.test(t)
   );
+}
+
+/** Cierre “fuerte” (chau, que estés bien, etc.): si el código ya salió, igual conviene un recordatorio. */
+function isDespedidaCierreFuerte(text: string): boolean {
+  if (!text || !text.trim()) return false;
+  const t = text.toLowerCase().trim();
+  return /\b(chau|chao)\b|nos vemos|que estés bien|que te vaya bien|cuídate|hasta luego|hasta pronto/i.test(t);
+}
+
+async function outboundAlreadySentTicketCode(ticketId: string, code: string): Promise<boolean> {
+  const found = await prisma.ticketMessage.findFirst({
+    where: {
+      ticketId,
+      direction: "OUTBOUND",
+      text: { contains: code },
+    },
+  });
+  return !!found;
+}
+
+async function recentRecordatorioEnviado(ticketId: string, minutesAgo: number): Promise<boolean> {
+  const since = new Date(Date.now() - minutesAgo * 60 * 1000);
+  const found = await prisma.ticketMessage.findFirst({
+    where: {
+      ticketId,
+      direction: "OUTBOUND",
+      text: { contains: "Recordatorio:" },
+      createdAt: { gte: since },
+    },
+  });
+  return !!found;
+}
+
+const WELCOME_TICKET_CODE_MESSAGE = (code: string) =>
+  `Hola! Hemos recibido tu mensaje. Reclamo: *${code}*. Un abogado lo revisará pronto.`;
+
+const REMINDER_TICKET_CODE_MESSAGE = (code: string) =>
+  `Recordatorio: tu reclamo es *${code}*. Guardá este número para cualquier consulta.`;
+
+async function sendTicketCodeAtFarewell(opts: {
+  ticketId: string;
+  ticketCode: string;
+  customerPhone: string;
+  peerText: string;
+  rawExtra: Record<string, unknown>;
+  botPaused?: boolean;
+}): Promise<void> {
+  const { ticketId, ticketCode, customerPhone, peerText, rawExtra, botPaused } = opts;
+  if (botPaused) return;
+
+  const yaEnviado = await outboundAlreadySentTicketCode(ticketId, ticketCode);
+  if (!yaEnviado) {
+    const welcomeCodeMessage = WELCOME_TICKET_CODE_MESSAGE(ticketCode);
+    try {
+      await sendWhatsAppMessage({ number: customerPhone, message: welcomeCodeMessage });
+      await prisma.ticketMessage.create({
+        data: {
+          ticketId,
+          direction: "OUTBOUND",
+          from: "BOT",
+          text: welcomeCodeMessage,
+          rawPayload: { autoReply: true, ...rawExtra, timestamp: new Date().toISOString() },
+        },
+      });
+      console.log(`✅ Código de reclamo enviado al cierre (${ticketCode})`);
+    } catch (err) {
+      console.error("❌ Error al enviar mensaje con código al cierre:", err);
+    }
+    return;
+  }
+
+  if (isDespedidaCierreFuerte(peerText) && !(await recentRecordatorioEnviado(ticketId, 25))) {
+    const reminder = REMINDER_TICKET_CODE_MESSAGE(ticketCode);
+    try {
+      await sendWhatsAppMessage({ number: customerPhone, message: reminder });
+      await prisma.ticketMessage.create({
+        data: {
+          ticketId,
+          direction: "OUTBOUND",
+          from: "BOT",
+          text: reminder,
+          rawPayload: { autoReply: true, recordatorioCodigo: true, ...rawExtra, timestamp: new Date().toISOString() },
+        },
+      });
+      console.log(`✅ Recordatorio de reclamo enviado (${ticketCode})`);
+    } catch (err) {
+      console.error("❌ Error al enviar recordatorio de código:", err);
+    }
+  }
 }
 
 async function processOutgoingMessage({ eventName, data }: { eventName: string; data: any }) {
@@ -558,36 +672,16 @@ async function processOutgoingMessage({ eventName, data }: { eventName: string; 
     },
   });
 
-  // Si el bot acaba de enviar una despedida y aún no enviamos el mensaje con el código, enviarlo ahora (al final del flujo)
+  // Si el bot/agente envía una despedida: enviar código o recordatorio al cierre fuerte
   if (isDespedida(messageText)) {
-    const yaEnviado = await prisma.ticketMessage.findFirst({
-      where: {
-        ticketId: ticket.id,
-        from: "BOT",
-        text: { contains: "Hemos recibido tu mensaje" },
-      },
+    await sendTicketCodeAtFarewell({
+      ticketId: ticket.id,
+      ticketCode: ticket.code,
+      customerPhone: customer.phone,
+      peerText: String(messageText || ""),
+      rawExtra: { atDespedida: true },
+      botPaused: !!customer.botPausedAt,
     });
-    if (!yaEnviado && !customer.botPausedAt) {
-      const welcomeCodeMessage = `Hola! Hemos recibido tu mensaje. Reclamo: *${ticket.code}*. Un abogado lo revisará pronto.`;
-      try {
-        await sendWhatsAppMessage({
-          number: customer.phone,
-          message: welcomeCodeMessage,
-        });
-        await prisma.ticketMessage.create({
-          data: {
-            ticketId: ticket.id,
-            direction: "OUTBOUND",
-            from: "BOT",
-            text: welcomeCodeMessage,
-            rawPayload: { autoReply: true, atDespedida: true, timestamp: new Date().toISOString() },
-          },
-        });
-        console.log(`✅ Mensaje con código enviado al final del flujo (despedida) para ${ticket.code}`);
-      } catch (err) {
-        console.error("❌ Error al enviar mensaje con código tras despedida:", err);
-      }
-    }
   }
 
   // Generar/actualizar resumen de la conversación con IA
