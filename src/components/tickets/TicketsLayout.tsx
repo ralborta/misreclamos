@@ -9,6 +9,9 @@ import { SidebarIcons, type SidebarIconName } from "@/components/tickets/Sidebar
 
 const NAV_ACTIVE_BG = "#375A7F";
 
+/** URL de la app externa “Gestión y análisis”. Si está vacía, el ítem no se muestra. */
+const GESTION_ANALISIS_URL = process.env.NEXT_PUBLIC_GESTION_ANALISIS_URL?.trim() || "";
+
 export function TicketsLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -113,6 +116,14 @@ function ReclamosSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         {navReady && isAdmin ? (
           <NavLink label="Legado" href="/legado" icon="briefcase" onNavigate={onClose} />
         ) : null}
+        {navReady && GESTION_ANALISIS_URL ? (
+          <ExternalNavLink
+            label="Gestión y análisis"
+            href={GESTION_ANALISIS_URL}
+            icon="chartBar"
+            onNavigate={onClose}
+          />
+        ) : null}
 
         <div className="my-2 border-t border-white/10" />
 
@@ -173,6 +184,36 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ExternalNavLink({
+  href,
+  label,
+  icon,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  icon: Exclude<SidebarIconName, "chevronRight" | "externalLink">;
+  onNavigate?: () => void;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onNavigate}
+      className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/95 transition-all duration-200 ease-out hover:bg-white/10"
+    >
+      <span className="flex-shrink-0 text-white/90 group-hover:text-white">
+        <SidebarIcons name={icon} className="h-5 w-5" />
+      </span>
+      <span className="flex-1 min-w-0 break-words group-hover:text-white">{label}</span>
+      <span className="flex-shrink-0 text-white/50 group-hover:text-white/70" title="Se abre en otra pestaña">
+        <SidebarIcons name="externalLink" className="h-4 w-4" />
+      </span>
+    </a>
+  );
+}
+
 function NavLink({
   href,
   label,
@@ -182,7 +223,7 @@ function NavLink({
 }: {
   href: string;
   label: string;
-  icon: Exclude<SidebarIconName, "chevronRight">;
+  icon: Exclude<SidebarIconName, "chevronRight" | "externalLink">;
   iconColor?: "emerald" | "orange" | "sky";
   onNavigate?: () => void;
 }) {
