@@ -452,21 +452,27 @@ async function outboundAlreadySentTicketCode(ticketId: string, code: string): Pr
   return !!found;
 }
 
-async function recentRecordatorioEnviado(ticketId: string, minutesAgo: number): Promise<boolean> {
+/** Evita reenviar el código / recordatorio si ya salió en un mensaje saliente reciente. */
+async function recentOutboundWithTicketCode(
+  ticketId: string,
+  code: string,
+  minutesAgo: number,
+): Promise<boolean> {
   const since = new Date(Date.now() - minutesAgo * 60 * 1000);
   const found = await prisma.ticketMessage.findFirst({
     where: {
       ticketId,
       direction: "OUTBOUND",
-      text: { contains: "Recordatorio:" },
+      text: { contains: code },
       createdAt: { gte: since },
     },
   });
   return !!found;
 }
 
-const WELCOME_TICKET_CODE_MESSAGE = (code: string) =>
-  `Hola! Hemos recibido tu mensaje. Reclamo: *${code}*. Un abogado lo revisará pronto.`;
+/** Primer envío del código en cierre: tono de cierre, sin “Hola / hemos recibido” (eso confunde tras la despedida del abogado). */
+const FIRST_FAREWELL_TICKET_CODE_MESSAGE = (code: string) =>
+  `Tu reclamo es *${code}*. Guardá este número para cualquier consulta.`;
 
 const REMINDER_TICKET_CODE_MESSAGE = (code: string) =>
   `Recordatorio: tu reclamo es *${code}*. Guardá este número para cualquier consulta.`;
@@ -484,15 +490,15 @@ async function sendTicketCodeAtFarewell(opts: {
 
   const yaEnviado = await outboundAlreadySentTicketCode(ticketId, ticketCode);
   if (!yaEnviado) {
-    const welcomeCodeMessage = WELCOME_TICKET_CODE_MESSAGE(ticketCode);
+    const firstFarewellMessage = FIRST_FAREWELL_TICKET_CODE_MESSAGE(ticketCode);
     try {
-      await sendWhatsAppMessage({ number: customerPhone, message: welcomeCodeMessage });
+      await sendWhatsAppMessage({ number: customerPhone, message: firstFarewellMessage });
       await prisma.ticketMessage.create({
         data: {
           ticketId,
           direction: "OUTBOUND",
           from: "BOT",
-          text: welcomeCodeMessage,
+          text: firstFarewellMessage,
           rawPayload: { autoReply: true, ...rawExtra, timestamp: new Date().toISOString() },
         },
       });
@@ -503,7 +509,10 @@ async function sendTicketCodeAtFarewell(opts: {
     return;
   }
 
-  if (isDespedidaCierreFuerte(peerText) && !(await recentRecordatorioEnviado(ticketId, 25))) {
+  if (
+    isDespedidaCierreFuerte(peerText) &&
+    !(await recentOutboundWithTicketCode(ticketId, ticketCode, 25))
+  ) {
     const reminder = REMINDER_TICKET_CODE_MESSAGE(ticketCode);
     try {
       await sendWhatsAppMessage({ number: customerPhone, message: reminder });
