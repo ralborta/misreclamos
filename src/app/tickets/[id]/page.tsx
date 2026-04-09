@@ -107,7 +107,14 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                     const createdAt = msg.createdAt instanceof Date
                       ? msg.createdAt
                       : new Date(msg.createdAt);
-                    const fromLabel = fromLabels[msg.from as "CUSTOMER" | "BOT" | "HUMAN"] || msg.from;
+                    const fromLabel =
+                      msg.from === "BOT"
+                        ? "MisReclamos"
+                        : msg.from === "HUMAN"
+                          ? "Abogado"
+                          : msg.from === "CUSTOMER"
+                            ? "Cliente"
+                            : fromLabels[msg.from as "CUSTOMER" | "BOT" | "HUMAN"] || msg.from;
                     const isBot = msg.from === "BOT";
                     const isAgent = msg.from === "HUMAN";
                     const bubbleBg = isBot
@@ -132,8 +139,21 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                               alt=""
                               className="h-full w-full object-cover"
                             />
+                          ) : isAgent ? (
+                            <span className="inline-flex items-center justify-center text-blue-800" title="Abogado">
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 3 3 7.5 12 12l9-4.5L12 3Z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5 10.5V15c0 1.8 3.1 3.5 7 3.5s7-1.7 7-3.5v-4.5" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M21 9v7" />
+                              </svg>
+                            </span>
                           ) : (
-                            <span>{(fromLabel.charAt(0) || "?")}</span>
+                            <span className="inline-flex items-center justify-center text-slate-700" title="Cliente">
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1" />
+                                <circle cx="9" cy="7" r="4" strokeWidth={2} />
+                              </svg>
+                            </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
