@@ -115,14 +115,23 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                       : isAgent
                         ? "bg-blue-100 text-blue-900"
                         : "bg-slate-100 text-slate-800";
-                    const avatarBg = isBot ? "bg-sky-200 text-sky-800" : isAgent ? "bg-blue-200 text-blue-800" : "bg-slate-300 text-slate-700";
+                    const avatarBg = isBot ? "" : isAgent ? "bg-blue-200 text-blue-800" : "bg-slate-300 text-slate-700";
                     const timeStr = createdAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
                     const dateStr = createdAt.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
                     return (
                       <div key={msg.id} className="flex gap-3">
-                        <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${avatarBg}`}>
+                        <div
+                          className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold overflow-hidden ${
+                            isBot ? "bg-slate-100 ring-1 ring-slate-200/90" : avatarBg
+                          }`}
+                        >
                           {isBot ? (
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>
+                            // eslint-disable-next-line @next/next/no-img-element -- avatar estático en /public
+                            <img
+                              src="/bot-avatar.png"
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <span>{(fromLabel.charAt(0) || "?")}</span>
                           )}
