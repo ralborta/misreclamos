@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { VoiceMessagePlayer } from "./VoiceMessagePlayer";
 
 interface Attachment {
   url: string;
@@ -11,16 +12,26 @@ interface Attachment {
 const isAbsoluteUrl = (url: string) =>
   url.startsWith("http://") || url.startsWith("https://");
 
-export function MessageAttachments({ attachments }: { attachments: Attachment[] }) {
+type Layout = "default" | "bubble";
+
+export function MessageAttachments({
+  attachments,
+  layout = "default",
+}: {
+  attachments: Attachment[];
+  layout?: Layout;
+}) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   if (!attachments || attachments.length === 0) {
     return null;
   }
 
+  const wrapClass = layout === "bubble" ? "flex flex-wrap gap-2" : "mt-2 flex flex-wrap gap-2";
+
   return (
     <>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className={wrapClass}>
         {attachments.map((att, idx) => {
           const canLoad = isAbsoluteUrl(att.url);
           if (!canLoad) {
@@ -62,13 +73,17 @@ export function MessageAttachments({ attachments }: { attachments: Attachment[] 
                   className="h-32 rounded-lg border border-slate-200"
                 />
               ) : att.type === "audio" ? (
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-0.5">
-                    <span>🎤</span>
-                    <span>Nota de voz</span>
+                layout === "bubble" ? (
+                  <VoiceMessagePlayer url={att.url} />
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-0.5">
+                      <span>🎤</span>
+                      <span>Nota de voz</span>
+                    </div>
+                    <VoiceMessagePlayer url={att.url} />
                   </div>
-                  <audio src={att.url} controls className="rounded-lg max-w-[260px]" />
-                </div>
+                )
               ) : (
                 <a
                   href={att.url}

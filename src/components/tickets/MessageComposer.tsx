@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import type { MessageDirection, MessageFrom } from "@/lib/types";
 import { BotPausedToggle } from "./BotPausedToggle";
+import { VoiceRecordButton } from "./VoiceRecordButton";
 
 type Props = {
   ticketId: string;
@@ -16,23 +17,26 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
   const [text, setText] = useState("");
   const [direction, setDirection] = useState<MessageDirection>("OUTBOUND");
   const [file, setFile] = useState<File | null>(null);
+  const [voiceFile, setVoiceFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const attachmentFile = voiceFile ?? file;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const hasText = text.trim().length > 0;
-    if (!hasText && !file) return;
+    if (!hasText && !attachmentFile) return;
     setLoading(true);
     setError(null);
     try {
-      if (file) {
+      if (attachmentFile) {
         const formData = new FormData();
         formData.append("text", text.trim());
         formData.append("direction", direction);
         formData.append("from", "HUMAN");
-        formData.append("file", file);
+        formData.append("file", attachmentFile);
         const res = await fetch(`/api/tickets/${ticketId}/messages`, {
           method: "POST",
           body: formData,
@@ -45,6 +49,7 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
           return;
         }
         setFile(null);
+        setVoiceFile(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         const res = await fetch(`/api/tickets/${ticketId}/messages`, {
@@ -82,14 +87,15 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
       return;
     }
     setError(null);
+    setVoiceFile(null);
     setFile(f);
   };
 
-  const canSend = text.trim().length > 0 || file;
+  const canSend = text.trim().length > 0 || !!attachmentFile;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
         <input
           ref={fileInputRef}
           type="file"
@@ -108,6 +114,17 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
           </svg>
         </label>
+        <VoiceRecordButton
+          disabled={loading || !!file}
+          voiceFile={voiceFile}
+          onVoiceReady={(f) => {
+            setError(null);
+            setFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            setVoiceFile(f);
+          }}
+          onVoiceClear={() => setVoiceFile(null)}
+        />
         <textarea
           className="min-h-[40px] flex-1 resize-none rounded-lg border-0 bg-transparent px-2 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
           rows={1}
@@ -126,7 +143,7 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
           </svg>
         </button>
       </div>
-      {file && (
+      {file && !voiceFile && (
         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
           <span className="text-slate-600 truncate flex-1" title={file.name}>
             📎 {file.name}

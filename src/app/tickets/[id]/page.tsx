@@ -125,6 +125,12 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                     const avatarBg = isBot ? "" : isAgent ? "bg-blue-200 text-blue-800" : "bg-slate-300 text-slate-700";
                     const timeStr = createdAt.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
                     const dateStr = createdAt.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+                    const atts = msg.attachments as { url: string; type: string; name: string }[] | null | undefined;
+                    const hideTextForVoice =
+                      Array.isArray(atts) &&
+                      atts.length === 1 &&
+                      atts[0]?.type === "audio" &&
+                      (msg.text === "[Mensaje de voz]" || msg.text === "[Archivo adjunto]");
                     return (
                       <div key={msg.id} className="flex gap-3">
                         <div
@@ -162,9 +168,13 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
                             <span className="text-xs text-slate-500">{timeStr}</span>
                           </div>
                           <div className={`mt-1 max-w-2xl rounded-xl px-4 py-2.5 text-sm ${bubbleBg}`}>
-                            {msg.text || "[Sin texto]"}
+                            {hideTextForVoice ? (
+                              <MessageAttachments attachments={atts!} layout="bubble" />
+                            ) : (
+                              <>{msg.text || "[Sin texto]"}</>
+                            )}
                           </div>
-                          {msg.attachments && (
+                          {msg.attachments && !hideTextForVoice && (
                             <div className="mt-1">
                               <MessageAttachments attachments={msg.attachments as any} />
                             </div>

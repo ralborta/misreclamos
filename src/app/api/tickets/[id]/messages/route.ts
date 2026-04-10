@@ -83,7 +83,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       rawPayload = parsed.data.rawPayload || {};
     }
 
-    const messageText = text.trim() || (attachments.length > 0 ? "[Archivo adjunto]" : "");
+    let messageText = text.trim();
+    if (!messageText && attachments.length > 0) {
+      messageText =
+        attachments.length === 1 && attachments[0].type === "audio"
+          ? "[Mensaje de voz]"
+          : "[Archivo adjunto]";
+    }
     if (!messageText) {
       return NextResponse.json({ error: "Texto o adjunto requerido" }, { status: 400 });
     }
