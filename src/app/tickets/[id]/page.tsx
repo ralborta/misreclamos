@@ -14,6 +14,7 @@ import { AssignAgentDropdown } from "@/components/tickets/AssignAgentDropdown";
 import { MessageAttachments } from "@/components/tickets/MessageAttachments";
 import { TicketLiveRefresh } from "@/components/tickets/TicketLiveRefresh";
 import { LegalTypeDropdown } from "@/components/tickets/LegalTypeDropdown";
+import { AcceptCaseButton } from "@/components/tickets/AcceptCaseButton";
 
 export default async function TicketDetail({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireSession();
@@ -78,6 +79,7 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
             <p className="mt-0.5 text-xs text-slate-500">{phone}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <AcceptCaseButton ticketId={ticket.id} currentStatus={ticket.status as TicketStatus} />
             <StatusActions ticketId={ticket.id} currentStatus={ticket.status as TicketStatus} variant="header" />
             <AssignAgentDropdown
               ticketId={ticket.id}
