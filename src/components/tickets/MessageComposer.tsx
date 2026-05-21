@@ -92,10 +92,15 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
   };
 
   const canSend = text.trim().length > 0 || !!attachmentFile;
+  const isInternalNote = direction === "INTERNAL_NOTE";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+      <div
+        className={`flex flex-wrap items-center gap-2 rounded-xl border p-2 shadow-sm transition-colors ${
+          isInternalNote ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"
+        }`}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -128,7 +133,7 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
         <textarea
           className="min-h-[40px] flex-1 resize-none rounded-lg border-0 bg-transparent px-2 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
           rows={1}
-          placeholder="Escribe una nota interna o mensaje..."
+          placeholder={isInternalNote ? "Nota interna del equipo (no se envía al cliente)…" : "Escribe la respuesta al cliente…"}
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
@@ -158,14 +163,25 @@ export function MessageComposer({ ticketId, customerId, botPaused = false }: Pro
         </div>
       )}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <select
-          value={direction}
-          onChange={(e) => setDirection(e.target.value as MessageDirection)}
-          className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 focus:border-[#2196F3] focus:outline-none"
-        >
-          <option value="OUTBOUND">Respuesta al cliente</option>
-          <option value="INTERNAL_NOTE">Nota interna</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={direction}
+            onChange={(e) => setDirection(e.target.value as MessageDirection)}
+            className={`rounded-md border px-2 py-1 text-xs focus:outline-none ${
+              isInternalNote
+                ? "border-amber-300 bg-amber-50 text-amber-800 focus:border-amber-400"
+                : "border-slate-200 bg-white text-slate-600 focus:border-[#2196F3]"
+            }`}
+          >
+            <option value="OUTBOUND">Respuesta al cliente</option>
+            <option value="INTERNAL_NOTE">Nota interna</option>
+          </select>
+          {isInternalNote && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+              Solo visible para el equipo
+            </span>
+          )}
+        </div>
         {customerId ? (
           <BotPausedToggle customerId={customerId} initialPaused={botPaused} />
         ) : null}
