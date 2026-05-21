@@ -101,6 +101,7 @@ model AgentUser {
   matricula      String?   // Matrícula profesional del abogado
   especializacion String?  // Especialización legal (ej: "Derecho Laboral", "Derecho Civil")
   tickets        Ticket[]  @relation("AgentAssignments")
+  ticketReads    TicketRead[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -133,6 +134,7 @@ model Ticket {
   messages          TicketMessage[]
   events            TicketEvent[]
   tags              TicketTag[]
+  reads             TicketRead[]
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -169,6 +171,19 @@ model TicketEvent {
   createdAt DateTime         @default(now())
 
   @@index([ticketId, createdAt])
+}
+
+/// Por cada par (ticket, usuario backoffice) guarda el último momento en que el usuario lo abrió.
+/// Se usa para calcular mensajes "no leídos" por agente.
+model TicketRead {
+  ticketId   String
+  userId     String
+  lastReadAt DateTime  @default(now())
+  ticket     Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user       AgentUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, userId])
+  @@index([userId])
 }
 
 model Tag {

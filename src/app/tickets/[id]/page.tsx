@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { ticketAccessibleByUser } from "@/lib/ticket-scope";
+import { markTicketRead } from "@/lib/ticket-read";
 
 export const dynamic = "force-dynamic";
 import { statusLabels, fromLabels } from "@/lib/tickets";
@@ -40,6 +41,8 @@ export default async function TicketDetail({ params }: { params: Promise<{ id: s
   if (!ticket) {
     notFound();
   }
+
+  await markTicketRead(session.user!, ticket.id);
 
   // Obtener lista de agentes para el dropdown
   const agentes = await prisma.agentUser.findMany({
